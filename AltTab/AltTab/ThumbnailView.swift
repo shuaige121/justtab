@@ -30,7 +30,7 @@ final class ThumbnailView: NSView {
     private let thumbnailHeight: CGFloat
 
     init(windowInfo: WindowInfo, width: CGFloat, height: CGFloat) {
-        self.thumbnailHeight = height - 50 // Reserve space for labels
+        self.thumbnailHeight = max(10, height - 50) // Reserve space for labels
 
         imageView = NSImageView()
         titleLabel = NSTextField(labelWithString: "")
@@ -144,6 +144,9 @@ final class ThumbnailView: NSView {
     }
 
     // MARK: - Mouse
+
+    /// JustTab is never the active app, so without this the first click would be eaten.
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 
     override func mouseDown(with event: NSEvent) {
         onClicked?()

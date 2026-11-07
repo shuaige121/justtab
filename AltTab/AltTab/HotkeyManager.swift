@@ -23,7 +23,7 @@ import Carbon.HIToolbox
 // MARK: - Delegate Protocol
 
 protocol HotkeyDelegate: AnyObject {
-    func hotkeyDidActivate()
+    func hotkeyDidActivate(reverse: Bool)
     func hotkeyDidCycleNext()
     func hotkeyDidCyclePrevious()
     func hotkeyDidConfirm()
@@ -79,6 +79,12 @@ final class HotkeyManager {
                 self.scheduleRetry()
             }
         }
+    }
+
+    /// Return to idle without notifying the delegate (e.g. the selection was confirmed by a
+    /// mouse click while the modifier is still held).
+    func reset() {
+        state = .idle
     }
 
     func stop() {
@@ -215,12 +221,21 @@ final class HotkeyManager {
             if modifierHeld && keyCode == triggerKey {
                 state = .active
                 DispatchQueue.main.async { [weak self] in
-                    self?.delegate?.hotkeyDidActivate()
+                    self?.delegate?.hotkeyDidActivate(reverse: shiftDown)
                 }
                 return nil // swallow the trigger key
             }
 
         case .active:
+            // Modifier no longer held: we missed its release (e.g. secure input swallowed the
+            // flagsChanged). Confirm as if released and let this key through normally.
+            if !modifierHeld {
+                state = .idle
+                DispatchQueue.main.async { [weak self] in
+                    self?.delegate?.hotkeyDidConfirm()
+                }
+                return Unmanaged.passUnretained(event)
+            }
             // The trigger key cycles selection (Shift = previous).
             if keyCode == triggerKey {
                 if shiftDown {
@@ -262,7 +277,10 @@ final class HotkeyManager {
                 return nil
 
             default:
-                break
+                // Swallow every other key while the switcher is open. With a Command trigger,
+                // passing e.g. Cmd-Q / Cmd-W through would act on the frontmost app, not on
+                // the window the user is looking at in the switcher.
+                return nil
             }
         }
 

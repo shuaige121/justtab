@@ -29,6 +29,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, HotkeyDelegate {
     private var currentWindows: [WindowInfo] = []
     private var selectedIndex: Int = 0
     private var switcherActive: Bool = false
+    /// Incremented on every activation so late thumbnail results from an earlier one are dropped.
+    private var activationID: Int = 0
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSLog("AltTab: applicationDidFinishLaunching")
@@ -43,6 +45,17 @@ class AppDelegate: NSObject, NSApplicationDelegate, HotkeyDelegate {
 
         hotkeyManager = HotkeyManager()
         hotkeyManager.delegate = self
+
+        NotificationCenter.default.addObserver(
+            forName: .switcherClickedWindow, object: nil, queue: .main
+        ) { [weak self] note in
+            guard let self = self, self.switcherActive,
+                  let index = note.userInfo?["index"] as? Int,
+                  index >= 0, index < self.currentWindows.count else { return }
+            self.selectedIndex = index
+            self.hotkeyManager.reset()
+            self.hotkeyDidConfirm()
+        }
 
         if AXIsProcessTrusted() {
             hotkeyManager.start()
@@ -91,22 +104,24 @@ class AppDelegate: NSObject, NSApplicationDelegate, HotkeyDelegate {
 
     // MARK: - HotkeyDelegate
 
-    func hotkeyDidActivate() {
+    func hotkeyDidActivate(reverse: Bool) {
         currentWindows = windowModel.enumerateWindows()
         guard !currentWindows.isEmpty else { return }
-        selectedIndex = min(1, currentWindows.count - 1) // start on second window (MRU)
+        // Start on the second window (MRU), or on the last one for Shift+trigger.
+        selectedIndex = reverse ? currentWindows.count - 1 : min(1, currentWindows.count - 1)
         switcherActive = true
+        activationID &+= 1
+        let thisActivation = activationID
 
-        // Capture thumbnails asynchronously
+        // Capture thumbnails asynchronously. Capture can take over a second, so the result
+        // may arrive after this switcher was dismissed and a new one opened; applying it then
+        // would replace the new window list with this stale one and switch to the wrong window.
         windowCapture.captureThumbnails(for: currentWindows) { [weak self] updatedWindows in
-            guard let self = self else { return }
+            guard let self = self, self.switcherActive,
+                  self.activationID == thisActivation else { return }
             self.currentWindows = updatedWindows
-            DispatchQueue.main.async {
-                // Only update if switcher is still active — avoids re-showing after dismiss
-                guard self.switcherActive else { return }
-                self.switcherPanel.show(windows: self.currentWindows,
-                                        selectedIndex: self.selectedIndex)
-            }
+            self.switcherPanel.show(windows: self.currentWindows,
+                                    selectedIndex: self.selectedIndex)
         }
 
         // Show immediately with placeholder icons

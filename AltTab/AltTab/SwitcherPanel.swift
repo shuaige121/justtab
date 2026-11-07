@@ -84,12 +84,18 @@ final class SwitcherPanel: NSPanel {
         guard !windows.isEmpty else { return }
 
         let screen = NSScreen.main ?? NSScreen.screens.first!
+        let area = screen.visibleFrame // excludes menu bar and Dock
 
-        // How many columns fit across 90% of the screen at full cell size.
-        let usableWidth = screen.frame.width * 0.9 - panelPadding * 2
-        let columns = max(1, min(windows.count,
-                                 Int((usableWidth + itemSpacing) / (itemWidth + itemSpacing))))
-        let rows = Int(ceil(Double(windows.count) / Double(columns)))
+        // Fit the whole grid inside 90% of the visible screen, shrinking cells when needed.
+        let grid = Self.fitGrid(count: windows.count,
+                                maxWidth: area.width * 0.9 - panelPadding * 2,
+                                maxHeight: area.height * 0.9 - panelPadding * 2,
+                                itemWidth: itemWidth, itemHeight: itemHeight,
+                                spacing: itemSpacing)
+        let columns = grid.columns
+        let rows = grid.rows
+        let cellWidth = (itemWidth * grid.scale).rounded(.down)
+        let cellHeight = (itemHeight * grid.scale).rounded(.down)
 
         // Build the grid row by row.
         var index = 0
@@ -101,7 +107,7 @@ final class SwitcherPanel: NSPanel {
             for _ in 0..<columns {
                 guard index < windows.count else { break }
                 let captured = index
-                let view = ThumbnailView(windowInfo: windows[captured], width: itemWidth, height: itemHeight)
+                let view = ThumbnailView(windowInfo: windows[captured], width: cellWidth, height: cellHeight)
                 view.isSelected = (captured == selectedIndex)
                 view.onClicked = { [weak self] in self?.handleClick(index: captured) }
                 rowStack.addArrangedSubview(view)
@@ -113,13 +119,13 @@ final class SwitcherPanel: NSPanel {
 
         // Panel size = grid content + padding (width based on the fullest row).
         let cols = min(columns, windows.count)
-        let contentWidth = CGFloat(cols) * itemWidth + CGFloat(max(0, cols - 1)) * itemSpacing
-        let contentHeight = CGFloat(rows) * itemHeight + CGFloat(max(0, rows - 1)) * itemSpacing
+        let contentWidth = CGFloat(cols) * cellWidth + CGFloat(max(0, cols - 1)) * itemSpacing
+        let contentHeight = CGFloat(rows) * cellHeight + CGFloat(max(0, rows - 1)) * itemSpacing
         let panelWidth = contentWidth + panelPadding * 2
         let panelHeight = contentHeight + panelPadding * 2
 
-        let panelX = screen.frame.midX - panelWidth / 2
-        let panelY = screen.frame.midY - panelHeight / 2
+        let panelX = area.midX - panelWidth / 2
+        let panelY = area.midY - panelHeight / 2
         setFrame(NSRect(x: panelX, y: panelY, width: panelWidth, height: panelHeight), display: true)
 
         orderFrontRegardless()
@@ -137,6 +143,25 @@ final class SwitcherPanel: NSPanel {
         orderOut(nil)
         gridStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
         thumbnailViews.removeAll()
+    }
+
+    /// Chooses the column count that lets `count` cells fit in `maxWidth` x `maxHeight` at the
+    /// largest scale (capped at 1 = full size). Ties go to more columns, so a handful of windows
+    /// still shows as a single row like before; only the cells shrink, spacing stays fixed.
+    static func fitGrid(count: Int, maxWidth: CGFloat, maxHeight: CGFloat,
+                        itemWidth: CGFloat, itemHeight: CGFloat,
+                        spacing: CGFloat) -> (columns: Int, rows: Int, scale: CGFloat) {
+        guard count > 0 else { return (1, 0, 1) }
+        var best: (columns: Int, rows: Int, scale: CGFloat) = (1, count, -1)
+        for columns in stride(from: count, through: 1, by: -1) {
+            let rows = (count + columns - 1) / columns
+            let widthScale = (maxWidth - CGFloat(columns - 1) * spacing) / (CGFloat(columns) * itemWidth)
+            let heightScale = (maxHeight - CGFloat(rows - 1) * spacing) / (CGFloat(rows) * itemHeight)
+            let scale = min(1, widthScale, heightScale)
+            if scale > best.scale + 0.0001 { best = (columns, rows, scale) }
+        }
+        best.scale = max(best.scale, 0.05)
+        return best
     }
 
     // MARK: - Private

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-APP_NAME="AltTab"
+APP_NAME="JustTab"
 SCHEME="AltTab"
 CONFIG="Release"
 PROJECT_DIR="$(cd "$(dirname "$0")/AltTab" && pwd)"
@@ -95,7 +95,7 @@ do_install() {
     echo "  open ${INSTALL_DIR}/${APP_NAME}.app"
     echo ""
     echo "First launch:"
-    echo "  Grant Accessibility:  System Settings → Privacy & Security → Accessibility → AltTab ON"
+    echo "  Grant Accessibility:  System Settings → Privacy & Security → Accessibility → JustTab ON"
 }
 
 do_run() {
