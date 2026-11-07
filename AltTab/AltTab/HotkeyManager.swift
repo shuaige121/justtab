@@ -170,6 +170,11 @@ final class HotkeyManager {
             return Unmanaged.passUnretained(event)
         }
 
+        // While recording a new shortcut, stay out of the way entirely.
+        if ShortcutSettings.shared.isRecording {
+            return Unmanaged.passUnretained(event)
+        }
+
         switch type {
         case .flagsChanged:
             return handleFlagsChanged(event)
@@ -182,20 +187,13 @@ final class HotkeyManager {
 
     private func handleFlagsChanged(_ event: CGEvent) -> Unmanaged<CGEvent>? {
         let flags = event.flags
-        let optionDown = flags.contains(.maskAlternate)
+        let modifierHeld = flags.contains(ShortcutSettings.shared.modifierFlags)
 
-        switch state {
-        case .idle:
-            if optionDown {
-                // Don't activate yet — wait for Tab keyDown
-            }
-        case .active:
-            if !optionDown {
-                // Option released → confirm selection
-                state = .idle
-                DispatchQueue.main.async { [weak self] in
-                    self?.delegate?.hotkeyDidConfirm()
-                }
+        // Trigger modifier released while active → confirm selection.
+        if state == .active && !modifierHeld {
+            state = .idle
+            DispatchQueue.main.async { [weak self] in
+                self?.delegate?.hotkeyDidConfirm()
             }
         }
 
@@ -207,23 +205,24 @@ final class HotkeyManager {
         let keyCode = event.getIntegerValueField(.keyboardEventKeycode)
         let flags = event.flags
 
-        let optionDown = flags.contains(.maskAlternate)
+        let modifierHeld = flags.contains(ShortcutSettings.shared.modifierFlags)
         let shiftDown = flags.contains(.maskShift)
+        let triggerKey = ShortcutSettings.shared.keyCode
 
         switch state {
         case .idle:
-            // Option + Tab → activate switcher
-            if optionDown && keyCode == kVK_Tab {
+            // configured modifier + trigger key → activate switcher
+            if modifierHeld && keyCode == triggerKey {
                 state = .active
                 DispatchQueue.main.async { [weak self] in
                     self?.delegate?.hotkeyDidActivate()
                 }
-                return nil // swallow the Tab
+                return nil // swallow the trigger key
             }
 
         case .active:
-            switch Int(keyCode) {
-            case kVK_Tab:
+            // The trigger key cycles selection (Shift = previous).
+            if keyCode == triggerKey {
                 if shiftDown {
                     DispatchQueue.main.async { [weak self] in
                         self?.delegate?.hotkeyDidCyclePrevious()
@@ -234,7 +233,8 @@ final class HotkeyManager {
                     }
                 }
                 return nil // swallow
-
+            }
+            switch Int(keyCode) {
             case kVK_LeftArrow:
                 DispatchQueue.main.async { [weak self] in
                     self?.delegate?.hotkeyDidCyclePrevious()
@@ -284,4 +284,70 @@ private func hotkeyEventCallback(
     }
     let manager = Unmanaged<HotkeyManager>.fromOpaque(userInfo).takeUnretainedValue()
     return manager.handleEvent(proxy, type: type, event: event)
+}
+
+// MARK: - ShortcutSettings
+
+/// The single user-configurable setting: the trigger shortcut (required modifier
+/// flags + a key code), persisted in UserDefaults. Default is Option+Tab.
+/// HotkeyManager reads this live on every event, so a change takes effect at once
+/// without restarting the tap.
+final class ShortcutSettings {
+    static let shared = ShortcutSettings()
+
+    /// While true, HotkeyManager passes every event through untouched so the
+    /// recorder can capture keys without the switcher reacting. Not persisted.
+    var isRecording = false
+
+    private let defaults = UserDefaults.standard
+    private let modsKey = "JustTab.triggerModifierFlags"
+    private let keyKey = "JustTab.triggerKeyCode"
+
+    /// Only these modifier bits are ever stored/compared (keeps values clean and small).
+    static let relevantMask: CGEventFlags = [.maskCommand, .maskShift, .maskControl, .maskAlternate]
+
+    /// Required modifier(s) that must be held. Default: Option.
+    var modifierFlags: CGEventFlags {
+        get {
+            guard defaults.object(forKey: modsKey) != nil else { return .maskAlternate }
+            return CGEventFlags(rawValue: UInt64(defaults.integer(forKey: modsKey)))
+                .intersection(Self.relevantMask)
+        }
+        set { defaults.set(Int(newValue.intersection(Self.relevantMask).rawValue), forKey: modsKey) }
+    }
+
+    /// Key that activates and cycles the switcher. Default: Tab.
+    var keyCode: Int64 {
+        get {
+            guard defaults.object(forKey: keyKey) != nil else { return Int64(kVK_Tab) }
+            return Int64(defaults.integer(forKey: keyKey))
+        }
+        set { defaults.set(Int(newValue), forKey: keyKey) }
+    }
+
+    func set(modifierFlags: CGEventFlags, keyCode: Int64) {
+        self.modifierFlags = modifierFlags
+        self.keyCode = keyCode
+    }
+
+    /// Human-readable like "⌥Tab" for the menu / recorder UI.
+    var displayString: String {
+        var s = ""
+        let m = modifierFlags
+        if m.contains(.maskControl) { s += "⌃" }
+        if m.contains(.maskAlternate) { s += "⌥" }
+        if m.contains(.maskShift) { s += "⇧" }
+        if m.contains(.maskCommand) { s += "⌘" }
+        return s + Self.keyName(keyCode)
+    }
+
+    static func keyName(_ code: Int64) -> String {
+        switch Int(code) {
+        case kVK_Tab: return "Tab"
+        case kVK_Space: return "Space"
+        case kVK_ANSI_Grave: return "`"
+        case kVK_Escape: return "Esc"
+        default: return "key#\(code)"
+        }
+    }
 }

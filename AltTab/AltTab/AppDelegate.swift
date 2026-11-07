@@ -76,17 +76,17 @@ class AppDelegate: NSObject, NSApplicationDelegate, HotkeyDelegate {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         if let button = statusItem.button {
             if let img = NSImage(systemSymbolName: "rectangle.on.rectangle",
-                                  accessibilityDescription: "AltTab") {
+                                  accessibilityDescription: "JustTab") {
                 img.isTemplate = true
                 button.image = img
             } else {
                 // Fallback if SF Symbol unavailable
-                button.title = "⌥⇥"
+                button.title = "⌃⇥"
             }
         }
         preferencesMenu = PreferencesMenu()
         statusItem.menu = preferencesMenu.menu
-        NSLog("AltTab: Status item installed")
+        NSLog("JustTab: Status item installed")
     }
 
     // MARK: - HotkeyDelegate

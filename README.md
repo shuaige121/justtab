@@ -1,161 +1,117 @@
-<p align="center">
-  <img src="https://img.shields.io/badge/platform-macOS_13%2B-000000?style=flat-square&logo=apple&logoColor=white" alt="macOS 13+">
-  <img src="https://img.shields.io/badge/swift-5.9%2B-F05138?style=flat-square&logo=swift&logoColor=white" alt="Swift 5.9+">
-  <img src="https://img.shields.io/github/license/sergio-farfan/alttab-macos?style=flat-square" alt="MIT License">
-  <img src="https://img.shields.io/github/v/release/sergio-farfan/alttab-macos?style=flat-square&label=version" alt="Version">
-  <img src="https://img.shields.io/github/stars/sergio-farfan/alttab-macos?style=flat-square" alt="Stars">
-</p>
+<div align="center">
 
-# AltTab
+# JustTab
 
-**Windows-style window switcher for macOS.**
+**A minimal, free window switcher for macOS — hold, Tab through live window previews, release to switch.**
 
-<p align="center">
-  <img src="Screenshots/AltTab1.jpg" alt="AltTab menu bar menu" width="320">
-</p>
+*极简、免费的 macOS 窗口切换器 —— 按住快捷键，在实时窗口预览中切换。*
 
-macOS Cmd-Tab switches between *applications*. AltTab switches between *windows* — just like Alt-Tab on Windows. Hold Option, tap Tab to see every open window as a thumbnail, cycle through them, and release to switch.
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+![Platform](https://img.shields.io/badge/macOS-13%2B-blue)
 
-## Features
+</div>
 
-- **Option-Tab** to activate, cycle with Tab, confirm on release
-- **Shift-Tab** / Arrow keys to navigate in reverse
-- **Escape** to cancel without switching
-- **Instant response** — window-raise runs off the main thread and app icons are cached, so the switcher appears immediately
-- Window titles via Accessibility API — works for all apps without Screen Recording permission
-- App icon display with graceful fallback (no Screen Recording prompt on macOS 15+)
-- Includes minimized windows
-- MRU (most recently used) ordering with intra-app focus tracking
-- Menu bar utility — no Dock icon, no clutter
-- Launch at Login support (macOS 13+ SMAppService)
-- Zero dependencies — pure Swift + AppKit
-- ~2,000 lines of code, single-purpose, auditable
+---
 
-## Quick Start
+## English
 
-```bash
-git clone https://github.com/sergio-farfan/alttab-macos.git
-cd alttab-macos
-./build.sh install
-open ~/Applications/AltTab.app
-```
+**JustTab does one thing: switch between *windows* (not just apps), Windows-style, with a live thumbnail grid.**
 
-Then grant **Accessibility** permission when prompted (System Settings → Privacy & Security → Accessibility).
+Press and hold your shortcut (default **⌥ Option + Tab**) to bring up a grid of every open window as a live preview. Keep holding and tap **Tab** (or the arrow keys) to move the selection; **release** to jump to that window. Press **Esc** to cancel.
 
-## Prerequisites
+### Why it exists
 
-| Requirement | Details |
-|-------------|---------|
-| **macOS** | 13.0+ (Ventura, Sonoma, Sequoia) |
-| **Xcode** | Full install from App Store (not just Command Line Tools) |
+It's built for people who just want the classic Alt-Tab window switcher — nothing more. No paywall, no upsell, no telemetry, no account, no settings maze. The **only** thing you can configure is the shortcut key; everything else is a sensible default that just works.
 
-<details>
-<summary>First time with Xcode?</summary>
+### Features
 
-If you just installed Xcode, you may need to run:
+- 🪟 **Per-window switching** with **live thumbnails** (not just app icons)
+- ⌨️ **One configurable setting** — record any trigger shortcut you like (menu bar → *Change Shortcut…*)
+- 🧱 **Grid layout** — every window stays on screen, nothing scrolls off
+- 🆓 **Free forever, MIT-licensed, open source** — no Pro tier, ever
+- 🔒 **No network, no telemetry** — it never phones home
+- 🪶 **Tiny** — pure Swift + AppKit, zero third-party dependencies
+
+### Requirements & permissions
+
+- macOS 13 (Ventura) or later
+- **Accessibility** — *required* (to capture the global shortcut and focus windows)
+- **Screen Recording** — *optional* (only for live thumbnails; without it you get app icons)
+
+Grant them in **System Settings → Privacy & Security**.
+
+### Install / build from source
 
 ```bash
-sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
-sudo xcodebuild -license accept
-sudo xcodebuild -runFirstLaunch
+git clone https://github.com/OWNER/justtab.git
+cd justtab
+./build.sh run          # build and launch
+./build.sh install      # build and install to ~/Applications
 ```
-</details>
 
-## Install
+Requires full Xcode (not just the Command Line Tools).
 
-### User install (recommended)
+### Usage
 
-Installs to `~/Applications` — no sudo required.
+| Key | Action |
+|-----|--------|
+| Hold **⌥** + **Tab** | Open the switcher / select next window |
+| **Tab** (while holding) | Next · **Shift+Tab** or **←/→** previous |
+| Release **⌥** | Switch to the selected window |
+| **Esc** | Cancel |
+
+To use a different trigger, open the menu bar icon → **Change Shortcut…** and press the keys you want.
+
+### Credits
+
+JustTab is a stripped-down fork of [**alttab-macos** by Sergio Farfan](https://github.com/sergio-farfan/alttab-macos) (MIT), itself inspired by the excellent [AltTab](https://github.com/lwouis/alt-tab-macos). Huge thanks to both.
+
+---
+
+## 中文
+
+**JustTab 只做一件事:像 Windows 一样在「窗口」之间切换(而不只是 App),并显示实时窗口预览网格。**
+
+按住你的快捷键(默认 **⌥ Option + Tab**),屏幕中央弹出所有打开窗口的实时预览网格;按住不放、点 **Tab**(或方向键)移动选择,**松开**即切换到该窗口,**Esc** 取消。
+
+### 为什么做它
+
+给只想要经典 Alt-Tab 窗口切换、别的都不要的人。**没有付费墙、没有推销、没有遥测、没有账号、没有设置迷宫。** 唯一能配置的就是快捷键,其余全是开箱即用的好默认。
+
+### 特性
+
+- 🪟 **逐窗口切换** + **实时缩略图**(不是只有 App 图标)
+- ⌨️ **唯一一个设置** —— 自定义触发快捷键(菜单栏 → *Change Shortcut…*,按什么键存什么)
+- 🧱 **网格布局** —— 所有窗口都在屏幕内,不会跑出去
+- 🆓 **永久免费、MIT 协议、开源** —— 永远不会有 Pro 版
+- 🔒 **不联网、无遥测** —— 绝不回传任何数据
+- 🪶 **极小** —— 纯 Swift + AppKit,零第三方依赖
+
+### 系统要求与权限
+
+- macOS 13 (Ventura) 及以上
+- **辅助功能(Accessibility)** —— *必需*(捕获全局快捷键、聚焦窗口)
+- **屏幕录制(Screen Recording)** —— *可选*(仅用于实时缩略图;不给则显示 App 图标)
+
+在 **系统设置 → 隐私与安全性** 中授权。
+
+### 从源码构建
 
 ```bash
-./build.sh install
+git clone https://github.com/OWNER/justtab.git
+cd justtab
+./build.sh run          # 编译并运行
+./build.sh install      # 编译并安装到 ~/Applications
 ```
 
-### System-wide install
+需要完整版 Xcode(不只是命令行工具)。
 
-Installs to `/Applications` — requires sudo.
+### 致谢
 
-```bash
-sudo ./build.sh install --system
-```
+JustTab 是 [Sergio Farfan 的 **alttab-macos**](https://github.com/sergio-farfan/alttab-macos)(MIT)的精简 fork,后者受优秀的 [AltTab](https://github.com/lwouis/alt-tab-macos) 启发。向两者致谢。
 
-### Build commands
+---
 
-| Command | Description |
-|---------|-------------|
-| `./build.sh build` | Build only (Release configuration) |
-| `./build.sh install` | Build and install to `~/Applications` |
-| `./build.sh install --system` | Build and install to `/Applications` (sudo) |
-| `./build.sh run` | Build and launch from build directory |
-| `./build.sh clean` | Remove build artifacts |
-| `./build.sh uninstall` | Remove from `~/Applications` |
-| `./build.sh uninstall --system` | Remove from `/Applications` (sudo) |
-
-## Permissions
-
-On first launch, AltTab will prompt for Accessibility access. Screen Recording is optional.
-
-| Permission | Required | Why |
-|-----------|----------|-----|
-| **Accessibility** | Yes | CGEvent tap for global hotkey detection; AXUIElement for window titles, window management, focus tracking, and unminimize |
-
-Grant in: **System Settings → Privacy & Security → Accessibility**
-
-> **Note:** Screen Recording permission is **not required**. Window titles are read via the Accessibility API, and app icons are used instead of live thumbnails. This avoids the repeated "Screen & System Audio Recording" prompt on macOS 15 (Sequoia).
-
-## Usage
-
-| Shortcut | Action |
-|----------|--------|
-| <kbd>Option</kbd> + <kbd>Tab</kbd> | Open switcher, select next window |
-| <kbd>Tab</kbd> | Cycle forward (while holding Option) |
-| <kbd>Shift</kbd> + <kbd>Tab</kbd> | Cycle backward |
-| <kbd>←</kbd> <kbd>→</kbd> | Navigate left / right |
-| Release <kbd>Option</kbd> | Switch to selected window |
-| <kbd>Escape</kbd> | Cancel, dismiss switcher |
-| <kbd>Enter</kbd> | Confirm selection |
-| Click thumbnail | Select and switch |
-
-## How It Works
-
-AltTab installs a **CGEvent tap** at the session level to intercept keyboard events globally. A 3-state machine (idle → active → idle) tracks Option hold/release and Tab presses. The event tap includes retry logic with exponential backoff to handle the case where the Accessibility subsystem isn't ready at login time. Window enumeration combines `CGWindowListCopyWindowInfo` (on-screen windows) with `AXUIElement` queries (minimized windows). Window titles are read via `AXUIElement` (`kAXTitleAttribute`), which only requires Accessibility permission — no Screen Recording needed. MRU order is maintained via `NSWorkspace` activation notifications and per-app `AXObserver` callbacks that track focused-window changes — including intra-app switches like Cmd-\`.
-
-The switcher UI is a **non-activating NSPanel** (`.nonactivatingPanel` style mask) so it floats above all windows without stealing focus. App icons are displayed for each window, served from an in-memory cache (prewarmed at launch) so the panel paints immediately instead of resolving each icon through LaunchServices on the fly. Window activation uses `AXUIElement` to raise the specific window and unminimize if needed; that synchronous AX IPC runs on a background queue with a bounded messaging timeout, so a slow target app can't block the main thread (and stall the switcher).
-
-## Architecture
-
-```
-AltTab/AltTab/
-├── main.swift              # App entry point — wires NSApp delegate manually
-├── AppDelegate.swift       # Lifecycle, menu bar status item, orchestration
-├── HotkeyManager.swift     # CGEvent tap + idle/active state machine
-├── WindowModel.swift       # CGWindowList + AXUIElement enumeration, MRU tracking, app-icon cache
-├── WindowCapture.swift     # Icon provider (live capture disabled to avoid Screen Recording prompt)
-├── SwitcherPanel.swift     # NSPanel overlay with NSVisualEffectView backdrop
-├── ThumbnailView.swift     # Individual window cell (thumbnail + title + app name)
-├── WindowActivator.swift   # AXUIElement window raise / unminimize (off-main, bounded timeout)
-├── PermissionManager.swift # Accessibility & Screen Recording permission checks
-└── PreferencesMenu.swift   # Status bar menu (Launch at Login, Quit)
-```
-
-## Uninstall
-
-```bash
-./build.sh uninstall                # Remove from ~/Applications
-sudo ./build.sh uninstall --system  # Remove from /Applications
-```
-
-Or manually delete `AltTab.app` and remove from Login Items in System Settings.
-
-## Contributing
-
-1. Fork the repo
-2. Create a feature branch (`git checkout -b feature/my-feature`)
-3. Make your changes
-4. Test: `./build.sh run`
-5. Commit and push
-6. Open a Pull Request
-
-## License
-
-[MIT](LICENSE) — Sergio Farfan (sergio.farfan@gmail.com)
+<div align="center">
+<sub>JustTab · MIT License · Just Tab. Nothing else.</sub>
+</div>

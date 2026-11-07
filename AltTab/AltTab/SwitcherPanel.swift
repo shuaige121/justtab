@@ -1,31 +1,25 @@
 //
 //  SwitcherPanel.swift
-//  AltTab — Windows-style Window Switcher for macOS
+//  JustTab — minimal window switcher for macOS
 //
-//  The overlay UI that displays window thumbnails in a horizontal strip.
-//  Built as an NSPanel with .nonactivatingPanel style mask so it floats
-//  above all windows without stealing focus — critical for the Option-release
-//  activation flow. Uses NSVisualEffectView with .hudWindow material for
-//  the semi-transparent backdrop, and an NSScrollView wrapping a horizontal
-//  NSStackView of ThumbnailView cells.
+//  The overlay UI: a centered grid of window thumbnails. Built as a
+//  .nonactivatingPanel so it floats above everything without stealing focus.
+//  Cells wrap into multiple rows so every window is visible without running off
+//  the screen edge. NSVisualEffectView (.hudWindow) gives the frosted backdrop.
 //
-//  Author:  Sergio Farfan <sergio.farfan@gmail.com>
-//  Version: 1.1.0
-//  Date:    2026-03-17
-//  License: MIT
+//  Based on alttab-macos by Sergio Farfan (MIT). Grid layout added here.
 //
 
 import Cocoa
 
 final class SwitcherPanel: NSPanel {
 
-    private let itemWidth: CGFloat = 180
-    private let itemHeight: CGFloat = 160
-    private let itemSpacing: CGFloat = 12
-    private let panelPadding: CGFloat = 20
+    private let itemWidth: CGFloat = 300
+    private let itemHeight: CGFloat = 240
+    private let itemSpacing: CGFloat = 14
+    private let panelPadding: CGFloat = 24
 
-    private var scrollView: NSScrollView!
-    private var stackView: NSStackView!
+    private var gridStack: NSStackView!      // vertical stack of row stacks
     private var thumbnailViews: [ThumbnailView] = []
     private var selectedIndex: Int = 0
 
@@ -61,35 +55,20 @@ final class SwitcherPanel: NSPanel {
         backdrop.wantsLayer = true
         backdrop.layer?.cornerRadius = 16
         backdrop.layer?.masksToBounds = true
-
         contentView = backdrop
 
-        scrollView = NSScrollView()
-        scrollView.drawsBackground = false
-        scrollView.hasHorizontalScroller = false
-        scrollView.hasVerticalScroller = false
-        scrollView.horizontalScrollElasticity = .none
-        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        gridStack = NSStackView()
+        gridStack.orientation = .vertical
+        gridStack.spacing = itemSpacing
+        gridStack.alignment = .centerX
+        gridStack.translatesAutoresizingMaskIntoConstraints = false
+        backdrop.addSubview(gridStack)
 
-        backdrop.addSubview(scrollView)
         NSLayoutConstraint.activate([
-            scrollView.topAnchor.constraint(equalTo: backdrop.topAnchor, constant: panelPadding),
-            scrollView.bottomAnchor.constraint(equalTo: backdrop.bottomAnchor, constant: -panelPadding),
-            scrollView.leadingAnchor.constraint(equalTo: backdrop.leadingAnchor, constant: panelPadding),
-            scrollView.trailingAnchor.constraint(equalTo: backdrop.trailingAnchor, constant: -panelPadding),
-        ])
-
-        stackView = NSStackView()
-        stackView.orientation = .horizontal
-        stackView.spacing = itemSpacing
-        stackView.translatesAutoresizingMaskIntoConstraints = false
-
-        scrollView.documentView = stackView
-        NSLayoutConstraint.activate([
-            stackView.topAnchor.constraint(equalTo: scrollView.contentView.topAnchor),
-            stackView.bottomAnchor.constraint(equalTo: scrollView.contentView.bottomAnchor),
-            stackView.leadingAnchor.constraint(equalTo: scrollView.contentView.leadingAnchor),
-            stackView.heightAnchor.constraint(equalToConstant: itemHeight),
+            gridStack.topAnchor.constraint(equalTo: backdrop.topAnchor, constant: panelPadding),
+            gridStack.bottomAnchor.constraint(equalTo: backdrop.bottomAnchor, constant: -panelPadding),
+            gridStack.leadingAnchor.constraint(equalTo: backdrop.leadingAnchor, constant: panelPadding),
+            gridStack.trailingAnchor.constraint(equalTo: backdrop.trailingAnchor, constant: -panelPadding),
         ])
     }
 
@@ -98,71 +77,80 @@ final class SwitcherPanel: NSPanel {
     func show(windows: [WindowInfo], selectedIndex: Int) {
         self.selectedIndex = selectedIndex
 
-        // Clear old
-        thumbnailViews.forEach { $0.removeFromSuperview() }
+        // Clear old rows + cells
+        gridStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
         thumbnailViews.removeAll()
 
-        // Build new
-        for (index, windowInfo) in windows.enumerated() {
-            let view = ThumbnailView(windowInfo: windowInfo, width: itemWidth, height: itemHeight)
-            view.isSelected = (index == selectedIndex)
-            view.onClicked = { [weak self] in
-                self?.handleClick(index: index)
+        guard !windows.isEmpty else { return }
+
+        let screen = NSScreen.main ?? NSScreen.screens.first!
+
+        // How many columns fit across 90% of the screen at full cell size.
+        let usableWidth = screen.frame.width * 0.9 - panelPadding * 2
+        let columns = max(1, min(windows.count,
+                                 Int((usableWidth + itemSpacing) / (itemWidth + itemSpacing))))
+        let rows = Int(ceil(Double(windows.count) / Double(columns)))
+
+        // Build the grid row by row.
+        var index = 0
+        for _ in 0..<rows {
+            let rowStack = NSStackView()
+            rowStack.orientation = .horizontal
+            rowStack.spacing = itemSpacing
+            rowStack.alignment = .centerY
+            for _ in 0..<columns {
+                guard index < windows.count else { break }
+                let captured = index
+                let view = ThumbnailView(windowInfo: windows[captured], width: itemWidth, height: itemHeight)
+                view.isSelected = (captured == selectedIndex)
+                view.onClicked = { [weak self] in self?.handleClick(index: captured) }
+                rowStack.addArrangedSubview(view)
+                thumbnailViews.append(view)
+                index += 1
             }
-            stackView.addArrangedSubview(view)
-            thumbnailViews.append(view)
+            gridStack.addArrangedSubview(rowStack)
         }
 
-        // Size and position the panel
-        let screen = NSScreen.main ?? NSScreen.screens.first!
-        let maxPanelWidth = screen.frame.width * 0.85
-        let contentWidth = CGFloat(windows.count) * itemWidth + CGFloat(max(0, windows.count - 1)) * itemSpacing
-        let panelWidth = min(maxPanelWidth, contentWidth + panelPadding * 2)
-        let panelHeight = itemHeight + panelPadding * 2
+        // Panel size = grid content + padding (width based on the fullest row).
+        let cols = min(columns, windows.count)
+        let contentWidth = CGFloat(cols) * itemWidth + CGFloat(max(0, cols - 1)) * itemSpacing
+        let contentHeight = CGFloat(rows) * itemHeight + CGFloat(max(0, rows - 1)) * itemSpacing
+        let panelWidth = contentWidth + panelPadding * 2
+        let panelHeight = contentHeight + panelPadding * 2
 
         let panelX = screen.frame.midX - panelWidth / 2
         let panelY = screen.frame.midY - panelHeight / 2
-
         setFrame(NSRect(x: panelX, y: panelY, width: panelWidth, height: panelHeight), display: true)
 
         orderFrontRegardless()
-        scrollToSelected()
     }
 
     func updateSelection(index: Int) {
-        guard index >= 0, index < thumbnailViews.count else { return }
+        guard index >= 0, index < thumbnailViews.count,
+              selectedIndex >= 0, selectedIndex < thumbnailViews.count else { return }
         thumbnailViews[selectedIndex].isSelected = false
         selectedIndex = index
         thumbnailViews[selectedIndex].isSelected = true
-        scrollToSelected()
     }
 
     func dismiss() {
         orderOut(nil)
-        thumbnailViews.forEach { $0.removeFromSuperview() }
+        gridStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
         thumbnailViews.removeAll()
     }
 
     // MARK: - Private
 
-    private func scrollToSelected() {
-        guard selectedIndex < thumbnailViews.count else { return }
-        let view = thumbnailViews[selectedIndex]
-        scrollView.contentView.scrollToVisible(view.frame)
-    }
-
     private func handleClick(index: Int) {
         updateSelection(index: index)
-        // Notify delegate through responder chain — AppDelegate handles it
         NotificationCenter.default.post(name: .switcherClickedWindow, object: nil,
                                         userInfo: ["index": index])
     }
 
-    // Allow mouse interaction even though we're non-activating
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { false }
 }
 
 extension Notification.Name {
-    static let switcherClickedWindow = Notification.Name("com.alttab.switcherClickedWindow")
+    static let switcherClickedWindow = Notification.Name("com.justtab.switcherClickedWindow")
 }

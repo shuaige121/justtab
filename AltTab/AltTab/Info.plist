@@ -23,12 +23,12 @@
 	<key>LSUIElement</key>
 	<true/>
 	<key>NSAccessibilityUsageDescription</key>
-	<string>AltTab needs Accessibility access to detect the Option-Tab hotkey and manage window focus.</string>
+	<string>JustTab needs Accessibility access to detect the Control-Tab hotkey and manage window focus.</string>
 	<key>NSMainNibFile</key>
 	<string></string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 	<key>NSScreenCaptureUsageDescription</key>
-	<string>AltTab needs Screen Recording access to capture window thumbnails.</string>
+	<string>JustTab needs Screen Recording access to capture window thumbnails.</string>
 </dict>
 </plist>
