@@ -59,6 +59,8 @@ Requires full Xcode (not just the Command Line Tools).
 | **Tab** (while holding) | Next · **Shift+Tab** or **←/→** previous |
 | Release **⌥** | Switch to the selected window |
 | **Esc** | Cancel |
+| Click a thumbnail | Switch to that window |
+| Hold **⌥** + **⇧ Shift** + **Tab** | Open with the last window selected |
 
 To use a different trigger, open the menu bar icon → **Change Shortcut…** and press the keys you want.
 
@@ -72,7 +74,7 @@ JustTab is a stripped-down fork of [**alttab-macos** by Sergio Farfan](https://g
 
 **JustTab 只做一件事:像 Windows 一样在「窗口」之间切换(而不只是 App),并显示实时窗口预览网格。**
 
-按住你的快捷键(默认 **⌥ Option + Tab**),屏幕中央弹出所有打开窗口的实时预览网格;按住不放、点 **Tab**(或方向键)移动选择,**松开**即切换到该窗口,**Esc** 取消。
+按住你的快捷键(默认 **⌥ Option + Tab**),屏幕中央弹出所有打开窗口的实时预览网格;按住不放、点 **Tab**(或方向键)移动选择,**松开**即切换到该窗口,**Esc** 取消;也可以直接点击缩略图切换。加按 **⇧ Shift** 打开时从最后一个窗口开始。
 
 ### 为什么做它
 
