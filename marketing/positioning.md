@@ -44,6 +44,11 @@ JustTab brings Windows-style Alt-Tab window switching to the Mac: hold the short
 | "Can I configure it?" | The shortcut is the only real setting, plus a Launch at Login toggle [F5]. We present this as a plain fact, not a selling point about "simplicity" beyond that. |
 | "Can I look at the code?" | The repository is github.com/shuaige121/justtab. It is currently private; the owner decides when to make it public [F16]. No post should go out before that. |
 
+## 5a. Owner's stance (internal, 2026-11-09)
+
+- JustTab is free forever and open source. It will never charge for anything or sell features inside the app (F17).
+- The owner considers feature-heavy switchers to have drifted away from the core job. JustTab's answer is focus: one job, one setting. Say this positively ("does one thing"); never name or criticize another product in public copy.
+
 ## 6. Tone
 
 - Professional, restrained, factual. Short sentences. State what it does and what it does not do.

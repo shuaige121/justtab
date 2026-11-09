@@ -32,7 +32,7 @@ On Windows you hold Alt, tap Tab, see every window, and release to switch. On ma
 - ➖ **Minimized windows are included** (shown with their app icon, dimmed)
 - 🧱 **Grid shrinks to fit**, so every window stays on screen
 - ⌨️ **One real setting:** the shortcut (plus a Launch at Login toggle). Lives in the menu bar, no Dock icon
-- 🆓 **Free, MIT-licensed, open source**
+- 🆓 **Free forever, MIT-licensed, open source.** No paywall, no Pro tier, no upsell
 - 🔒 **No networking code:** no telemetry, no account, no update checks
 - 🪶 **Small:** pure Swift + AppKit, zero third-party dependencies, about 316 KB
 
@@ -80,7 +80,7 @@ JustTab 在单个窗口之间切换，而不只是在 App 之间切换。按住�
 - ➖ **包含已最小化的窗口**（显示 App 图标，颜色变暗）
 - 🧱 **网格自动缩小**，保证所有窗口都显示在屏幕内
 - ⌨️ **只有一个真正的设置：**快捷键（另有「登录时启动」开关）。常驻菜单栏，没有 Dock 图标
-- 🆓 **免费、MIT 协议、开源**
+- 🆓 **永久免费、MIT 协议、开源。** 没有付费墙、没有 Pro 版、不推销
 - 🔒 **不含任何联网代码：**无遥测、无账号、不检查更新
 - 🪶 **体积小：**纯 Swift + AppKit，零第三方依赖，约 316 KB
 
@@ -102,7 +102,7 @@ JustTab 是 [Sergio Farfan 的 **alttab-macos**](https://github.com/sergio-farfa
 
 ## Notes for applying
 
-- The current README says "Free forever ... no Pro tier, ever", "no paywall, no upsell" and "no settings maze". These go beyond the fact list (F9 says free, MIT, open source). They are replaced here by the plain statements above. If the owner wants to keep a "free forever" promise, it is the owner's commitment to make, not ours.
+- "Free forever, no paywall, no Pro tier, no upsell" is the owner's commitment (confirmed 2026-11-09, fact F17). "No settings maze" is still dropped as subjective; F5 states the settings plainly.
 - Keep the existing "Requirements & permissions" section; it matches F12. Add one clarification: live thumbnails need macOS 14+ as well as Screen Recording permission.
 - The existing bilingual tagline line （极简、免费的 macOS 窗口切换器 ...） is dropped in favor of the section split above； restore it if preferred.
 - No screenshot or GIF is included because none exists for JustTab.

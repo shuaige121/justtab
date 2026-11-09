@@ -12,7 +12,7 @@ Preconditions before any of these go out (owner decisions, not copy):
 ## 1. GitHub repository description (<=350 characters)
 
 ```
-Alt-Tab style window switcher for macOS. Hold Option+Tab, see live thumbnails of your windows, release to switch. Free, MIT, no networking code. Build from source (macOS 13+). A stripped-down fork of alttab-macos.
+Alt-Tab style window switcher for macOS. Hold Option+Tab, see live thumbnails of your windows, release to switch. Free forever, MIT, no networking code. Build from source (macOS 13+). A stripped-down fork of alttab-macos.
 ```
 
 Suggested topics:
@@ -41,7 +41,7 @@ Behavior:
 - Windows are ordered most recently used first, and it opens with the previous window selected, so a quick press and release toggles between your two latest windows.
 - Minimized windows are included.
 
-Other facts: free, MIT-licensed, about 316 KB, pure Swift + AppKit with no third-party dependencies, and no networking code (no telemetry, account or update checks).
+Other facts: free forever (no paywall, no Pro tier, no upsell), MIT-licensed, about 316 KB, pure Swift + AppKit with no third-party dependencies, and no networking code (no telemetry, account or update checks).
 
 Limitations: it only lists windows on the current Space, plus minimized ones. It needs macOS 13+ and Accessibility permission. Live thumbnails need macOS 14+ and Screen Recording permission; otherwise it shows app icons.
 
@@ -61,7 +61,7 @@ Feedback is welcome.
 **Title**
 
 ```
-JustTab: Windows-style Alt-Tab window switching for macOS (free, open source, build from source)
+JustTab: Windows-style Alt-Tab window switching for macOS (free forever, open source, build from source)
 ```
 
 **Body**
@@ -76,7 +76,7 @@ JustTab switches individual windows and shows a grid of live thumbnails. The def
 - Minimized windows are included.
 - The grid shrinks cells so every window fits on screen.
 - Lives in the menu bar, no Dock icon. The shortcut is the only real setting, plus Launch at Login.
-- Free, MIT, open source. No networking code: no telemetry, no account, no update checks. About 316 KB, Swift + AppKit, no third-party dependencies.
+- Free forever, MIT, open source. No paywall, no Pro tier, no upsell. No networking code: no telemetry, no account, no update checks. About 316 KB, Swift + AppKit, no third-party dependencies.
 
 Limitations: only windows on the current Space are listed (plus minimized ones). Needs macOS 13+ and Accessibility permission. Live thumbnails need macOS 14+ and Screen Recording permission; otherwise you get app icons.
 
@@ -107,7 +107,7 @@ Alt-Tab style window switching for macOS
 ```
 JustTab switches between individual windows, not just apps. Hold the shortcut, see a grid of live window thumbnails, tap Tab to move, release to switch. The default shortcut is Option+Tab, which is the Alt key on a PC keyboard used with a Mac, so it is physically Alt+Tab. It can be changed to any modifier + key combination, including Cmd+Tab.
 
-Windows are ordered most recently used first, minimized windows are included, and a quick press and release toggles between your two latest windows. Free, MIT-licensed, open source, no networking code, about 316 KB.
+Windows are ordered most recently used first, minimized windows are included, and a quick press and release toggles between your two latest windows. Free forever with no upsell, MIT-licensed, open source, no networking code, about 316 KB.
 
 Limitation: only windows on the current Space are listed. Requires macOS 13+ and Accessibility permission; live thumbnails need macOS 14+ and Screen Recording permission.
 
@@ -121,7 +121,7 @@ Install today: build from source with full Xcode (no prebuilt download). A strip
 **Title**
 
 ```
-JustTab：给从 Windows 转到 Mac 的人用的 Alt-Tab 窗口切换器（免费开源，需从源码构建）
+JustTab：给从 Windows 转到 Mac 的人用的 Alt-Tab 窗口切换器（永久免费、开源，需从源码构建）
 ```
 
 **Body**
@@ -138,7 +138,7 @@ JustTab 做的就是这件事：在单个窗口之间切换，并以实时缩略
 - 窗口多时网格会缩小单元格，保证都显示在屏幕内。
 - 常驻菜单栏，没有 Dock 图标。唯一真正的设置是快捷键，另有「登录时启动」开关。
 
-其他信息：免费，MIT 协议，开源；不含任何联网代码，没有遥测、账号和更新检查；纯 Swift + AppKit，零第三方依赖，约 316 KB。
+其他信息：永久免费，没有付费版，也不推销；MIT 协议，开源；不含任何联网代码，没有遥测、账号和更新检查；纯 Swift + AppKit，零第三方依赖，约 316 KB。
 
 限制：只列出当前 Space（桌面）上的窗口，加上已最小化的窗口，其他 Space 的窗口不显示。需要 macOS 13 及以上和辅助功能权限；实时缩略图需要 macOS 14 及以上和屏幕录制权限，否则显示 App 图标。
 
@@ -177,7 +177,7 @@ JustTab 把 Windows 的这套操作带到了 Mac 上：
 · 按最近使用顺序排列，快速按下再松开，就在最近两个窗口之间来回切换
 · 包含已最小化的窗口
 · 快捷键可以改，包括改成 Cmd+Tab
-· 免费，MIT 协议，开源，不含联网代码，约 316 KB
+· 永久免费，没有付费版，不推销；MIT 协议，开源，不含联网代码，约 316 KB
 
 需要注意：
 · 只显示当前桌面（Space）上的窗口，其他桌面的窗口不显示

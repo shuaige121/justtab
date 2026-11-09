@@ -4,6 +4,8 @@ Fact IDs F1-F16 are from the allowed list. O1 = the owner's brief: on Windows, A
 
 Files: P = positioning.md, R = readme-hero.md, L = launch-posts.md. The same claim appears in several places; it is listed once.
 
+F17 (added 2026-11-09, owner's decision): JustTab is free forever: no paywall, no Pro tier, no upsell.
+
 ## Claims made and their sources
 
 | # | Claim text (as used in copy) | Fact ID(s) | Where |
@@ -51,7 +53,7 @@ Judgment notes:
 
 ## Claims I wanted to make but could not support (excluded from the copy)
 
-- "Free forever" / "no Pro tier, ever" / "no paywall, no upsell" (current README). F9 says free and MIT only; a future promise is not a fact. Removed in the proposed hero.
+- ~~"Free forever" / "no Pro tier" / "no paywall, no upsell"~~ now supported by F17 (owner's commitment, 2026-11-09) and used in the copy.
 - "No settings maze" / "just works" / "sensible defaults" (current README). Subjective; replaced by F5.
 - "Fast", "lightweight on CPU/memory", "instant", any speed or resource number other than 316 KB.
 - "Works on Apple Silicon / Intel / specific Mac models", "tested on macOS 13 / 14 / 15 / 26". Only the minimum versions in F12 are known.
@@ -73,5 +75,5 @@ Judgment notes:
 4. **Product Hunt needs a website/link and gallery image.** Not available; not invented.
 5. **No release/version information**, so no "v1.0" or "latest release" lines.
 6. **No author/maker byline or contact** was provided; posts speak neutrally ("Feedback is welcome") without a name or email.
-7. **Whether to keep the "free forever" promise** in the README is an owner decision.
+7. ~~Free-forever promise~~ decided: keep it (F17).
 8. **Language of the README tagline** in Chinese was reworded; confirm the owner is happy dropping the bilingual tagline line.
