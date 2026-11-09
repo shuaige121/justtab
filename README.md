@@ -43,7 +43,7 @@ Grant them in **System Settings → Privacy & Security**.
 ### Install / build from source
 
 ```bash
-git clone https://github.com/OWNER/justtab.git
+git clone https://github.com/shuaige121/justtab.git
 cd justtab
 ./build.sh run          # build and launch
 ./build.sh install      # build and install to ~/Applications
@@ -100,7 +100,7 @@ JustTab is a stripped-down fork of [**alttab-macos** by Sergio Farfan](https://g
 ### 从源码构建
 
 ```bash
-git clone https://github.com/OWNER/justtab.git
+git clone https://github.com/shuaige121/justtab.git
 cd justtab
 ./build.sh run          # 编译并运行
 ./build.sh install      # 编译并安装到 ~/Applications
