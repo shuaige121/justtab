@@ -4,8 +4,7 @@
 //
 //  Handles the actual window switching: unminimizes if needed, activates the
 //  owning application, and raises the specific window via AXUIElement. Window
-//  matching uses CGWindowID first (via _AXUIElementGetWindow), falling back
-//  to title matching, then first-window-of-app as a last resort.
+//  matching uses CGWindowID (via _AXUIElementGetWindow).
 //
 //  Author:  Sergio Farfan <sergio.farfan@gmail.com>
 //  Version: 1.1.0
@@ -30,6 +29,9 @@ enum WindowActivator {
     /// app to answer, short enough that a wedged app can't tie up the queue indefinitely.
     private static let axMessagingTimeout: Float = 1.0
 
+    /// Counts switches (main thread), so a delayed check can tell a newer switch happened.
+    private static var switchCount = 0
+
     /// Activates the given window: brings the owning app forward on the main thread, then
     /// unminimizes (if needed) and raises the specific window via AXUIElement off the main
     /// thread so confirm returns immediately and the UI never blocks.
@@ -40,77 +42,65 @@ enum WindowActivator {
         // cheap (~1% of activation cost); AppKit is not safe to touch off the main thread.
         app.activate(options: [.activateIgnoringOtherApps])
 
-        // The expensive part — synchronous AX IPC to fetch the app's window list and raise
-        // the target — runs off the main thread.
+        // The app's topmost window comes up with the app itself, so the Accessibility raise
+        // is only needed for its other windows. Shortly after, check that the app really
+        // focused that window, and raise it if not.
+        switchCount &+= 1
+        if window.isFrontOfApp && !window.isMinimized {
+            let thisSwitch = switchCount
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                guard thisSwitch == switchCount else { return } // the user has switched again
+                axQueue.async {
+                    let focused = focusedWindowID(pid: window.ownerPID) == window.windowID
+                    perfLog.info("raise: skipped, focused=\(focused, privacy: .public) (\(window.ownerName, privacy: .public))")
+                    if !focused { _ = raiseWindow(window) }
+                }
+            }
+            return
+        }
+        raise(window)
+    }
+
+    private static func focusedWindowID(pid: pid_t) -> CGWindowID? {
+        let axApp = AXUIElementCreateApplication(pid)
+        AXUIElementSetMessagingTimeout(axApp, axMessagingTimeout)
+        var ref: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(axApp, kAXFocusedWindowAttribute as CFString, &ref) == .success,
+              let element = ref, CFGetTypeID(element) == AXUIElementGetTypeID() else { return nil }
+        var windowID: CGWindowID = 0
+        guard _AXUIElementGetWindow(element as! AXUIElement, &windowID) == .success else { return nil }
+        return windowID
+    }
+
+    private static func raise(_ window: WindowInfo) {
         let started = DispatchTime.now()
         axQueue.async {
-            if window.isMinimized {
-                unminimize(window: window)
-            }
-            raiseWindow(window: window)
+            let found = raiseWindow(window)
             let ms = Double(DispatchTime.now().uptimeNanoseconds - started.uptimeNanoseconds) / 1_000_000
-            perfLog.info("raise: \(String(format: "%.1f", ms), privacy: .public) ms (\(window.ownerName, privacy: .public))")
+            perfLog.info("raise: \(String(format: "%.1f", ms), privacy: .public) ms, found=\(found, privacy: .public) (\(window.ownerName, privacy: .public))")
         }
     }
 
-    // MARK: - Unminimize
-
-    private static func unminimize(window: WindowInfo) {
+    /// One window lookup for both steps. Matches by CGWindowID only: if the window is gone,
+    /// the app has still been activated, which is better than raising a different window.
+    private static func raiseWindow(_ window: WindowInfo) -> Bool {
         let axApp = AXUIElementCreateApplication(window.ownerPID)
         AXUIElementSetMessagingTimeout(axApp, axMessagingTimeout)
         var windowsRef: CFTypeRef?
         guard AXUIElementCopyAttributeValue(axApp, kAXWindowsAttribute as CFString, &windowsRef) == .success,
-              let axWindows = windowsRef as? [AXUIElement] else { return }
+              let axWindows = windowsRef as? [AXUIElement] else { return false }
 
         for axWindow in axWindows {
             var windowID: CGWindowID = 0
-            _ = _AXUIElementGetWindow(axWindow, &windowID)
-
-            if windowID == window.windowID {
+            guard _AXUIElementGetWindow(axWindow, &windowID) == .success,
+                  windowID == window.windowID else { continue }
+            if window.isMinimized {
                 AXUIElementSetAttributeValue(axWindow, kAXMinimizedAttribute as CFString, false as CFTypeRef)
-                break
             }
+            AXUIElementPerformAction(axWindow, kAXRaiseAction as CFString)
+            AXUIElementSetAttributeValue(axWindow, kAXMainAttribute as CFString, true as CFTypeRef)
+            return true
         }
-    }
-
-    // MARK: - Raise Window
-
-    private static func raiseWindow(window: WindowInfo) {
-        let axApp = AXUIElementCreateApplication(window.ownerPID)
-        AXUIElementSetMessagingTimeout(axApp, axMessagingTimeout)
-        var windowsRef: CFTypeRef?
-        guard AXUIElementCopyAttributeValue(axApp, kAXWindowsAttribute as CFString, &windowsRef) == .success,
-              let axWindows = windowsRef as? [AXUIElement] else { return }
-
-        // Try to match by CGWindowID first
-        for axWindow in axWindows {
-            var windowID: CGWindowID = 0
-            _ = _AXUIElementGetWindow(axWindow, &windowID)
-
-            if windowID == window.windowID {
-                AXUIElementPerformAction(axWindow, kAXRaiseAction as CFString)
-                AXUIElementSetAttributeValue(axWindow, kAXMainAttribute as CFString, true as CFTypeRef)
-                return
-            }
-        }
-
-        // Fallback: match by title + approximate bounds
-        for axWindow in axWindows {
-            var titleRef: CFTypeRef?
-            AXUIElementCopyAttributeValue(axWindow, kAXTitleAttribute as CFString, &titleRef)
-            let title = titleRef as? String ?? ""
-
-            if title == window.windowTitle && !title.isEmpty {
-                AXUIElementPerformAction(axWindow, kAXRaiseAction as CFString)
-                AXUIElementSetAttributeValue(axWindow, kAXMainAttribute as CFString, true as CFTypeRef)
-                return
-            }
-        }
-
-        // Last resort: raise the first window
-        if let firstWindow = axWindows.first {
-            AXUIElementPerformAction(firstWindow, kAXRaiseAction as CFString)
-            AXUIElementSetAttributeValue(firstWindow, kAXMainAttribute as CFString, true as CFTypeRef)
-        }
+        return false
     }
 }

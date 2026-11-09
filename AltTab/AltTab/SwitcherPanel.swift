@@ -25,6 +25,11 @@ final class SwitcherPanel: NSPanel {
     /// every image view and label.
     private var pool: [ThumbnailView] = []
     private var selectedIndex: Int = 0
+    /// Cells created at launch, so the first switch doesn't pay for building them.
+    private static let prewarmedCells = 24
+
+    /// Called with the cell index when the user clicks a window.
+    var onClick: ((Int) -> Void)?
 
     override init(contentRect: NSRect, styleMask style: NSWindow.StyleMask, backing backingStoreType: NSWindow.BackingStoreType, defer flag: Bool) {
         super.init(contentRect: contentRect,
@@ -42,6 +47,7 @@ final class SwitcherPanel: NSPanel {
         self.ignoresMouseEvents = false
 
         setupUI()
+        pool = (0..<Self.prewarmedCells).map { _ in ThumbnailView(width: itemWidth, height: itemHeight) }
     }
 
     convenience init() {
@@ -148,14 +154,10 @@ final class SwitcherPanel: NSPanel {
         thumbnailViews[selectedIndex].isSelected = true
     }
 
-    /// Swaps in new pictures without rebuilding the grid. `windows` must be the list the
-    /// panel is showing (same order); otherwise it falls back to a full show.
-    func updateImages(windows: [WindowInfo]) {
-        guard windows.count == thumbnailViews.count else {
-            show(windows: windows, selectedIndex: selectedIndex)
-            return
-        }
-        for (view, window) in zip(thumbnailViews, windows) { view.setImage(for: window) }
+    /// Swaps in a fresh picture for one cell without touching the rest of the grid.
+    func updateImage(at index: Int, image: NSImage) {
+        guard thumbnailViews.indices.contains(index) else { return }
+        thumbnailViews[index].setThumbnail(image)
     }
 
     func dismiss() {
@@ -194,14 +196,9 @@ final class SwitcherPanel: NSPanel {
 
     private func handleClick(index: Int) {
         updateSelection(index: index)
-        NotificationCenter.default.post(name: .switcherClickedWindow, object: nil,
-                                        userInfo: ["index": index])
+        onClick?(index)
     }
 
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { false }
-}
-
-extension Notification.Name {
-    static let switcherClickedWindow = Notification.Name("com.justtab.switcherClickedWindow")
 }

@@ -39,3 +39,20 @@ Verification by the main session: Fable's key number re-measured independently; 
 ### Lighter code (about 210–240 lines, 10–12%)
 Stale file headers −80 (keep MIT attribution), tap back-off −30, raise fallbacks −30, delegate-dispatch helper −25, `seedMRUFromStackingOrder` −12, click closure −10, dead code −10, duplicate 2 s polls −8, NSLog → Logger.
 Owner decision: hover highlight (−22 lines, small UX change).
+
+## Round 1 results (2026-11-10, this Mac, 22 windows, real Cmd+Tab use)
+Before = build 27ddf58, 12 switches; after = Round 1 build, 11 switches. Times are medians. "After" is measured from the key event (event tap → handler adds ~0.1 ms), "before" from the handler.
+
+| Metric | Before | After |
+|---|---|---|
+| First switch after launch, panel shown | 199 ms (earlier session) | 64.6 ms (list 33.4 ms) |
+| Warm open, panel shown | 39.5 ms | 34.0 ms |
+| Warm open, work besides the window list | 11.3 ms | 8.4 ms |
+| First fresh thumbnail on screen | ~250–300 ms (all at once) | ~55 ms (49.5–62.1) |
+| All fresh thumbnails | 248–262 ms | 241–281 ms (unchanged) |
+| Raise, app's front window (5 switches) | 25–39 ms | skipped; check 150 ms later found the right window focused 5/5 |
+| Raise, other windows | 26–61 ms | 22–55 ms |
+| Memory (phys_footprint) | 22 MB | 25 MB (no measurable gain; the 81 MB estimate never matched reality) |
+
+Cancellation works: three quick switches stopped after 8, 10 and 14 of 22 captures.
+The window list (22–30 ms warm) is now most of the warm open time; that is Round 2's "show CG windows first" item.

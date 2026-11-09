@@ -36,11 +36,6 @@ final class ThumbnailView: NSView {
     private var imageWidthConstraint: NSLayoutConstraint!
     private var imageHeightConstraint: NSLayoutConstraint!
 
-    convenience init(windowInfo: WindowInfo, width: CGFloat, height: CGFloat) {
-        self.init(width: width, height: height)
-        configure(with: windowInfo, width: width, height: height)
-    }
-
     /// Creates an empty cell. The switcher keeps a pool of these and reuses them, so
     /// opening it doesn't rebuild every view.
     init(width: CGFloat, height: CGFloat) {
@@ -146,10 +141,14 @@ final class ThumbnailView: NSView {
     }
 
     /// Updates only the picture, e.g. when a fresh thumbnail arrives while the switcher is open.
-    func setImage(for windowInfo: WindowInfo) {
+    func setThumbnail(_ image: NSImage) {
+        imageView.image = image
+        imageView.alphaValue = 1
+    }
+
+    private func setImage(for windowInfo: WindowInfo) {
         if let thumbnail = windowInfo.thumbnail {
-            imageView.image = thumbnail
-            imageView.alphaValue = 1
+            setThumbnail(thumbnail)
         } else {
             // Fallback: app icon
             imageView.image = windowInfo.appIcon

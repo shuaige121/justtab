@@ -14,7 +14,6 @@
 //
 
 import Cocoa
-import ServiceManagement
 
 class AppDelegate: NSObject, NSApplicationDelegate, HotkeyDelegate {
 
@@ -47,12 +46,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, HotkeyDelegate {
         hotkeyManager = HotkeyManager()
         hotkeyManager.delegate = self
 
-        NotificationCenter.default.addObserver(
-            forName: .switcherClickedWindow, object: nil, queue: .main
-        ) { [weak self] note in
-            guard let self = self, self.switcherActive,
-                  let index = note.userInfo?["index"] as? Int,
-                  index >= 0, index < self.currentWindows.count else { return }
+        switcherPanel.onClick = { [weak self] index in
+            guard let self = self, self.switcherActive, self.currentWindows.indices.contains(index) else { return }
             self.selectedIndex = index
             self.hotkeyManager.reset()
             self.hotkeyDidConfirm()
@@ -67,10 +62,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, HotkeyDelegate {
             if granted {
                 self.hotkeyManager.stop()
                 self.hotkeyManager.start()
+                self.windowModel.accessibilityGranted()
             } else {
                 self.hotkeyManager.stop()
                 self.hotkeyDidCancel()
             }
+        }
+        permissionManager.onScreenRecordingChange = { [weak self] granted in
+            if granted { self?.windowCapture.prewarm() }
         }
         permissionManager.startMonitoring()
     }
@@ -103,11 +102,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, HotkeyDelegate {
 
     // MARK: - HotkeyDelegate
 
-    func hotkeyDidActivate(reverse: Bool) {
+    func hotkeyDidActivate(reverse: Bool, pressedAt: DispatchTime) {
         let started = DispatchTime.now()
+        windowCapture.prefetchContent() // overlaps with building the list
         currentWindows = windowModel.enumerateWindows()
         let enumerated = DispatchTime.now()
-        guard !currentWindows.isEmpty else { return }
+        guard !currentWindows.isEmpty else {
+            hotkeyManager.reset() // nothing to show: don't keep swallowing keys
+            windowCapture.cancel()
+            return
+        }
         // Last known thumbnails first, so the panel opens with images instead of icons.
         currentWindows = windowCapture.applyCached(to: currentWindows)
         // Start on the second window (MRU), or on the last one for Shift+trigger.
@@ -116,26 +120,34 @@ class AppDelegate: NSObject, NSApplicationDelegate, HotkeyDelegate {
         activationID &+= 1
         let thisActivation = activationID
 
-        // Capture thumbnails asynchronously. Capture can take over a second, so the result
-        // may arrive after this switcher was dismissed and a new one opened; applying it then
-        // would replace the new window list with this stale one and switch to the wrong window.
-        windowCapture.captureThumbnails(for: currentWindows) { [weak self] updatedWindows, captured in
-            perfLog.info("thumbnails: \(captured, privacy: .public) captured in \(Self.ms(since: started), privacy: .public) ms")
-            guard let self = self, self.switcherActive,
-                  self.activationID == thisActivation else { return }
-            self.currentWindows = updatedWindows
-            self.switcherPanel.updateImages(windows: self.currentWindows)
-        }
-
-        // Show immediately with cached thumbnails / icons
         switcherPanel.show(windows: currentWindows, selectedIndex: selectedIndex)
         let cachedCount = currentWindows.filter { $0.thumbnail != nil }.count
         perfLog.info("""
             activate: \(self.currentWindows.count, privacy: .public) windows, \
+            key→handler \(Self.ms(started, since: pressedAt), privacy: .public) ms, \
             list \(Self.ms(enumerated, since: started), privacy: .public) ms, \
-            panel shown at \(Self.ms(since: started), privacy: .public) ms, \
+            panel shown at \(Self.ms(since: pressedAt), privacy: .public) ms after key, \
             \(cachedCount, privacy: .public) cached thumbnails
             """)
+
+        // Fresh thumbnails, selected window first, each shown as it arrives. A result for an
+        // earlier activation is dropped: the panel may since show a different window list.
+        var firstImageAt: String?
+        windowCapture.captureThumbnails(
+            for: currentWindows, first: selectedIndex, generation: thisActivation,
+            onImage: { [weak self] index, image in
+                guard let self = self, self.switcherActive, self.activationID == thisActivation,
+                      self.currentWindows.indices.contains(index) else { return }
+                if firstImageAt == nil { firstImageAt = Self.ms(since: pressedAt) }
+                self.currentWindows[index].thumbnail = image
+                self.switcherPanel.updateImage(at: index, image: image)
+            },
+            onDone: { captured in
+                perfLog.info("""
+                    thumbnails: \(captured, privacy: .public) captured, first shown at \
+                    \(firstImageAt ?? "-", privacy: .public) ms, all done at \(Self.ms(since: pressedAt), privacy: .public) ms after key
+                    """)
+            })
     }
 
     private static func ms(_ end: DispatchTime = .now(), since start: DispatchTime) -> String {
@@ -163,7 +175,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, HotkeyDelegate {
         let window = currentWindows[selectedIndex]
         dismissSwitcher()
         WindowActivator.activate(window: window)
-        windowModel.promoteToFront(windowID: window.windowID)
+        windowModel.didSwitch(to: window)
     }
 
     func hotkeyDidCancel() {
@@ -172,6 +184,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, HotkeyDelegate {
 
     private func dismissSwitcher() {
         switcherActive = false
+        windowCapture.cancel()
         switcherPanel.dismiss()
     }
 }

@@ -25,15 +25,11 @@ struct WindowInfo {
     let windowID: CGWindowID
     let ownerPID: pid_t
     let ownerName: String
-    let windowTitle: String
-    let bounds: CGRect
+    var windowTitle: String
     let isMinimized: Bool
+    /// Topmost window of its app on this Space; activating the app alone brings it up.
+    var isFrontOfApp = false
     var thumbnail: NSImage?
-
-    func withTitle(_ title: String) -> WindowInfo {
-        WindowInfo(windowID: windowID, ownerPID: ownerPID, ownerName: ownerName, windowTitle: title,
-                   bounds: bounds, isMinimized: isMinimized, thumbnail: thumbnail)
-    }
 
     /// Returns the app icon for this window's owner process, served from an in-memory
     /// cache so the switcher never hits LaunchServices/disk while building the panel.
@@ -85,20 +81,45 @@ final class WindowModel {
 
     /// MRU-ordered list of window IDs. Front of array = most recently used.
     private var mruOrder: [CGWindowID] = []
-    private let selfBundleID = Bundle.main.bundleIdentifier ?? ""
 
     /// Per-PID AXObservers for intra-app window focus tracking.
     private var axObservers: [pid_t: AXObserver] = [:]
+
+    /// Accessibility queries made outside the switcher (prewarm, app activation), kept off
+    /// the main thread so a busy app can't delay the shortcut.
+    private static let backgroundAX = DispatchQueue(label: "com.leonardchow.justtab.ax", qos: .utility)
+
+    /// An app JustTab itself just activated; its activation notification is skipped because
+    /// the chosen window was already moved to the front of the MRU list.
+    private var expectedActivation: (pid: pid_t, until: DispatchTime)?
 
     init() {
         // Cap every Accessibility message this process sends (default is 6 s) so one
         // unresponsive app can't stall the switcher.
         AXUIElementSetMessagingTimeout(AXUIElementCreateSystemWide(), 1.0)
-        seedMRUFromStackingOrder()
         observeAppActivation()
         observeAppLifecycle()
-        installAXObserversForRunningApps()
         prewarmIcons()
+    }
+
+    /// Called when Accessibility is (re)granted: install the focus observers that could not
+    /// be registered before, and warm every app's Accessibility connection so the first
+    /// switch after launch is as fast as later ones.
+    func accessibilityGranted() {
+        let apps = Self.regularApps()
+        for app in apps { installAXObserver(for: app.pid) }
+        Self.backgroundAX.async {
+            DispatchQueue.concurrentPerform(iterations: apps.count) { i in
+                _ = Self.scanApp(pid: apps[i].pid, name: apps[i].name, needTitle: [], alreadySeen: [])
+            }
+        }
+    }
+
+    private static func regularApps() -> [(pid: pid_t, name: String)] {
+        let selfPID = ProcessInfo.processInfo.processIdentifier
+        return NSWorkspace.shared.runningApplications
+            .filter { $0.activationPolicy == .regular && $0.processIdentifier != selfPID }
+            .map { ($0.processIdentifier, $0.localizedName ?? "Unknown") }
     }
 
     deinit {
@@ -118,15 +139,17 @@ final class WindowModel {
         var windows: [WindowInfo] = []
         var seenIDs = Set<CGWindowID>()
         var untitled: [CGWindowID: Int] = [:]   // CG windows still needing a title → index
+        var appsWithFront = Set<pid_t>()
 
         // 1. On-screen windows from CGWindowList (titles need Screen Recording).
         if let infoList = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements],
                                                       kCGNullWindowID) as? [[String: Any]] {
-            for info in infoList {
-                guard let window = parseWindowInfo(info, isMinimized: false),
+            for info in infoList { // front to back
+                guard var window = parseWindowInfo(info),
                       window.ownerPID != selfPID,
                       !seenIDs.contains(window.windowID) else { continue }
                 seenIDs.insert(window.windowID)
+                window.isFrontOfApp = appsWithFront.insert(window.ownerPID).inserted
                 if window.windowTitle.isEmpty { untitled[window.windowID] = windows.count }
                 windows.append(window)
             }
@@ -135,9 +158,7 @@ final class WindowModel {
         // 2. Accessibility pass: minimized windows (not in the CG list) and missing titles.
         //    Apps are queried in parallel, so the pass costs about as much as the slowest
         //    app instead of the sum of all of them.
-        let apps: [(pid: pid_t, name: String)] = NSWorkspace.shared.runningApplications
-            .filter { $0.activationPolicy == .regular && $0.processIdentifier != selfPID }
-            .map { ($0.processIdentifier, $0.localizedName ?? "Unknown") }
+        let apps = Self.regularApps()
         let needTitle = Set(untitled.keys)
         let alreadySeen = seenIDs
         var results = [AXAppScan](repeating: AXAppScan(), count: apps.count)
@@ -149,7 +170,7 @@ final class WindowModel {
         }
         for scan in results {
             for (id, title) in scan.titles {
-                if let index = untitled[id] { windows[index] = windows[index].withTitle(title) }
+                if let index = untitled[id] { windows[index].windowTitle = title }
             }
             for window in scan.minimized where !seenIDs.contains(window.windowID) {
                 seenIDs.insert(window.windowID)
@@ -158,7 +179,7 @@ final class WindowModel {
         }
 
         // 3. Sort by MRU
-        pruneMRU(validIDs: Set(windows.map { $0.windowID }))
+        pruneMRU(ids: windows.map { $0.windowID })
         let rank = Dictionary(uniqueKeysWithValues: mruOrder.enumerated().map { ($1, $0) })
         windows.sort { (rank[$0.windowID] ?? Int.max) < (rank[$1.windowID] ?? Int.max) }
 
@@ -195,7 +216,7 @@ final class WindowModel {
                   (minimizedRef as? Bool) == true else { continue }
             scan.minimized.append(WindowInfo(windowID: windowID, ownerPID: pid, ownerName: name,
                                              windowTitle: axString(axWindow, kAXTitleAttribute),
-                                             bounds: .zero, isMinimized: true, thumbnail: nil))
+                                             isMinimized: true))
         }
         return scan
     }
@@ -213,25 +234,20 @@ final class WindowModel {
         mruOrder.insert(windowID, at: 0)
     }
 
-    private func seedMRUFromStackingOrder() {
-        guard let infoList = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements],
-                                                        kCGNullWindowID) as? [[String: Any]] else { return }
-        mruOrder = infoList.compactMap { info -> CGWindowID? in
-            guard let id = info[kCGWindowNumber as String] as? CGWindowID,
-                  let layer = info[kCGWindowLayer as String] as? Int, layer == 0,
-                  let bounds = info[kCGWindowBounds as String] as? [String: CGFloat],
-                  let w = bounds["Width"], let h = bounds["Height"],
-                  w > 0 && h > 0 else { return nil }
-            return id
-        }
+    /// The user picked this window in the switcher: it becomes the most recent, and the
+    /// activation notification its app is about to send is ignored.
+    func didSwitch(to window: WindowInfo) {
+        promoteToFront(windowID: window.windowID)
+        expectedActivation = (window.ownerPID, .now() + 1)
     }
 
-    private func pruneMRU(validIDs: Set<CGWindowID>) {
-        mruOrder.removeAll { !validIDs.contains($0) }
-        // Add any new windows not yet in MRU at the end
-        for id in validIDs where !mruOrder.contains(id) {
-            mruOrder.append(id)
-        }
+    /// Drops closed windows and appends unseen ones in the given (stacking) order, so the
+    /// first switch after launch follows what is on screen.
+    private func pruneMRU(ids: [CGWindowID]) {
+        let valid = Set(ids)
+        mruOrder.removeAll { !valid.contains($0) }
+        var known = Set(mruOrder)
+        for id in ids where known.insert(id).inserted { mruOrder.append(id) }
     }
 
     private func observeAppActivation() {
@@ -244,30 +260,27 @@ final class WindowModel {
         }
     }
 
-    /// When an app is activated, promote its frontmost window in MRU.
+    /// When an app is activated, promote its focused window in MRU. The Accessibility query
+    /// runs off the main thread; an app whose focus observer failed to register earlier
+    /// (e.g. it was still launching) gets another attempt here.
     private func promoteAppWindows(pid: pid_t) {
-        let axApp = AXUIElementCreateApplication(pid)
-        var focusedRef: CFTypeRef?
-        guard AXUIElementCopyAttributeValue(axApp, kAXFocusedWindowAttribute as CFString, &focusedRef) == .success else { return }
-        let focusedWindow = focusedRef as! AXUIElement
-        var windowID: CGWindowID = 0
-        _ = _AXUIElementGetWindow(focusedWindow, &windowID)
-        if windowID != 0 {
-            promoteToFront(windowID: windowID)
+        if let expected = expectedActivation, expected.pid == pid, DispatchTime.now() < expected.until {
+            expectedActivation = nil
+            return
+        }
+        installAXObserver(for: pid)
+        Self.backgroundAX.async { [weak self] in
+            let axApp = AXUIElementCreateApplication(pid)
+            var focusedRef: CFTypeRef?
+            guard AXUIElementCopyAttributeValue(axApp, kAXFocusedWindowAttribute as CFString, &focusedRef) == .success,
+                  let ref = focusedRef, CFGetTypeID(ref) == AXUIElementGetTypeID() else { return }
+            var windowID: CGWindowID = 0
+            guard _AXUIElementGetWindow(ref as! AXUIElement, &windowID) == .success, windowID != 0 else { return }
+            DispatchQueue.main.async { self?.promoteToFront(windowID: windowID) }
         }
     }
 
     // MARK: - AXObserver (Intra-App Focus Tracking)
-
-    /// Install AXObservers on all currently running regular apps.
-    private func installAXObserversForRunningApps() {
-        let apps = NSWorkspace.shared.runningApplications.filter {
-            $0.activationPolicy == .regular && $0.processIdentifier != ProcessInfo.processInfo.processIdentifier
-        }
-        for app in apps {
-            installAXObserver(for: app.processIdentifier)
-        }
-    }
 
     /// Warm the icon cache for currently-running apps shortly after launch. Deferred to the
     /// main run loop so it never blocks startup; subsequent launches are warmed via the
@@ -290,8 +303,10 @@ final class WindowModel {
         guard result == .success, let observer = observer else { return }
 
         let axApp = AXUIElementCreateApplication(pid)
-        AXObserverAddNotification(observer, axApp, kAXFocusedWindowChangedNotification as CFString,
-                                  Unmanaged.passUnretained(self).toOpaque())
+        // Not stored on failure (no permission yet, app still launching), so a later
+        // attempt can register it.
+        guard AXObserverAddNotification(observer, axApp, kAXFocusedWindowChangedNotification as CFString,
+                                        Unmanaged.passUnretained(self).toOpaque()) == .success else { return }
 
         CFRunLoopAddSource(CFRunLoopGetMain(), AXObserverGetRunLoopSource(observer), .commonModes)
         axObservers[pid] = observer
@@ -328,8 +343,15 @@ final class WindowModel {
                            object: nil, queue: .main) { [weak self] notification in
             guard let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication,
                   app.activationPolicy == .regular else { return }
-            self?.installAXObserver(for: app.processIdentifier)
-            AppIconCache.shared.prewarm(pid: app.processIdentifier)
+            let pid = app.processIdentifier, name = app.localizedName ?? "Unknown"
+            AppIconCache.shared.prewarm(pid: pid)
+            // A just-launched app usually can't answer Accessibility yet; register and warm
+            // it once it has had time to open its windows.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                guard AXIsProcessTrusted() else { return }
+                self?.installAXObserver(for: pid)
+                Self.backgroundAX.async { _ = Self.scanApp(pid: pid, name: name, needTitle: [], alreadySeen: []) }
+            }
         }
 
         center.addObserver(forName: NSWorkspace.didTerminateApplicationNotification,
@@ -342,30 +364,20 @@ final class WindowModel {
 
     // MARK: - Helpers
 
-    private func parseWindowInfo(_ info: [String: Any], isMinimized: Bool) -> WindowInfo? {
+    private func parseWindowInfo(_ info: [String: Any]) -> WindowInfo? {
         guard let windowID = info[kCGWindowNumber as String] as? CGWindowID,
               let ownerPID = info[kCGWindowOwnerPID as String] as? pid_t,
               let ownerName = info[kCGWindowOwnerName as String] as? String,
               let layer = info[kCGWindowLayer as String] as? Int, layer == 0,
               let boundsDict = info[kCGWindowBounds as String] as? [String: CGFloat],
-              let x = boundsDict["X"], let y = boundsDict["Y"],
               let w = boundsDict["Width"], let h = boundsDict["Height"],
               w > 0 && h > 0 else { return nil }
 
         // kCGWindowName needs Screen Recording; enumerateWindows() fills missing titles
         // from its single Accessibility pass.
         let title = info[kCGWindowName as String] as? String ?? ""
-        let bounds = CGRect(x: x, y: y, width: w, height: h)
-
-        return WindowInfo(
-            windowID: windowID,
-            ownerPID: ownerPID,
-            ownerName: ownerName,
-            windowTitle: title,
-            bounds: bounds,
-            isMinimized: isMinimized,
-            thumbnail: nil
-        )
+        return WindowInfo(windowID: windowID, ownerPID: ownerPID, ownerName: ownerName,
+                          windowTitle: title, isMinimized: false)
     }
 }
 

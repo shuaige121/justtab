@@ -47,6 +47,7 @@ git clone https://github.com/shuaige121/justtab.git
 cd justtab
 ./build.sh run          # build and launch
 ./build.sh install      # build and install to ~/Applications
+tests/run.sh            # run the unit tests (hotkey, permissions, grid, MRU)
 ```
 
 Requires full Xcode (not just the Command Line Tools).
@@ -104,6 +105,7 @@ git clone https://github.com/shuaige121/justtab.git
 cd justtab
 ./build.sh run          # 编译并运行
 ./build.sh install      # 编译并安装到 ~/Applications
+tests/run.sh            # 运行单元测试(快捷键、权限、网格、最近使用排序)
 ```
 
 需要完整版 Xcode(不只是命令行工具)。

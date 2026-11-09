@@ -66,6 +66,8 @@ final class PermissionManager {
 
     /// Called on the main thread whenever Accessibility flips (and once for the initial state).
     var onAccessibilityChange: ((Bool) -> Void)?
+    /// Called on the main thread whenever Screen Recording flips (and once for the initial state).
+    var onScreenRecordingChange: ((Bool) -> Void)?
 
     static let checkInterval: TimeInterval = 2
     /// At login TCC can briefly report "not trusted" before it is ready; wait this long
@@ -87,7 +89,9 @@ final class PermissionManager {
         self.env = environment
     }
 
-    var hasScreenRecording: Bool { env.hasScreenRecording() }
+    /// Last polled state. The system check costs ~8 ms on the main thread, so the switcher
+    /// reads this instead of asking macOS on every activation (at most 2 s stale).
+    var hasScreenRecording: Bool { screenRecordingGranted ?? false }
 
     func startMonitoring() {
         guard timer == nil else { return }
@@ -120,12 +124,13 @@ final class PermissionManager {
         if sr != screenRecordingGranted {
             screenRecordingGranted = sr
             justTabLog.info("screenRecording=\(sr ? "granted" : "missing", privacy: .public)")
+            onScreenRecordingChange?(sr)
         }
 
         // Ask for the optional permissions only once Accessibility is settled, so the user
         // never gets two system dialogs stacked on top of each other.
         if ax {
-            requestScreenRecordingIfNeverAsked()
+            if !sr { requestScreenRecordingIfNeverAsked() }
             if !loginItemChecked {
                 loginItemChecked = true
                 if env.loginItemRequiresApproval() {
@@ -155,8 +160,7 @@ final class PermissionManager {
     }
 
     private func requestScreenRecordingIfNeverAsked() {
-        guard !env.hasScreenRecording(),
-              !env.defaults.bool(forKey: Self.screenRecordingAskedKey) else { return }
+        guard !env.defaults.bool(forKey: Self.screenRecordingAskedKey) else { return }
         env.defaults.set(true, forKey: Self.screenRecordingAskedKey)
         justTabLog.info("prompting for screen recording (first time)")
         env.requestScreenRecording()

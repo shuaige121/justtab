@@ -23,7 +23,8 @@ import Carbon.HIToolbox
 // MARK: - Delegate Protocol
 
 protocol HotkeyDelegate: AnyObject {
-    func hotkeyDidActivate(reverse: Bool)
+    /// `pressedAt` is when the event tap received the key, for end-to-end timing.
+    func hotkeyDidActivate(reverse: Bool, pressedAt: DispatchTime)
     func hotkeyDidCycleNext()
     func hotkeyDidCyclePrevious()
     func hotkeyDidConfirm()
@@ -53,9 +54,12 @@ final class HotkeyManager {
     /// Delay between retries, in seconds (doubles each attempt, capped at 4s).
     private static let baseTapRetryInterval: TimeInterval = 0.5
     private var tapRetryCount = 0
+    /// False after stop(), so a retry queued before it doesn't install a tap again.
+    private var running = false
 
     /// Safe to call repeatedly: does nothing while a tap is already installed.
     func start() {
+        running = true
         guard eventTap == nil else { return }
         tapRetryCount = 0
         if !installEventTap() {
@@ -75,7 +79,7 @@ final class HotkeyManager {
         tapRetryCount += 1
         NSLog("AltTab: Will retry event tap in %.1fs (attempt %d/%d)", delay, tapRetryCount, Self.maxTapRetries)
         DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
-            guard let self = self, self.eventTap == nil else { return }
+            guard let self = self, self.running, self.eventTap == nil else { return }
             if self.installEventTap() {
                 NSLog("AltTab: Event tap created on retry %d", self.tapRetryCount)
             } else {
@@ -91,6 +95,7 @@ final class HotkeyManager {
     }
 
     func stop() {
+        running = false
         reEnableTimer?.invalidate()
         reEnableTimer = nil
         state = .idle
@@ -157,15 +162,20 @@ final class HotkeyManager {
                 // If we were active, we missed the Option release — force cancel
                 if self.state == .active {
                     self.state = .idle
-                    DispatchQueue.main.async { [weak self] in
-                        self?.delegate?.hotkeyDidCancel()
-                    }
+                    notify { $0.hotkeyDidCancel() }
                 }
             }
         }
     }
 
     // MARK: - Event Handling
+
+    /// Delegate calls are made on the next main run-loop turn, outside the tap callback.
+    private func notify(_ call: @escaping (HotkeyDelegate) -> Void) {
+        DispatchQueue.main.async { [weak self] in
+            if let delegate = self?.delegate { call(delegate) }
+        }
+    }
 
     fileprivate func handleEvent(_ proxy: CGEventTapProxy, type: CGEventType, event: CGEvent) -> Unmanaged<CGEvent>? {
         // If tap is disabled, re-enable and force-cancel any active switcher
@@ -175,9 +185,7 @@ final class HotkeyManager {
             }
             if state == .active {
                 state = .idle
-                DispatchQueue.main.async { [weak self] in
-                    self?.delegate?.hotkeyDidCancel()
-                }
+                notify { $0.hotkeyDidCancel() }
             }
             return Unmanaged.passUnretained(event)
         }
@@ -204,9 +212,7 @@ final class HotkeyManager {
         // Trigger modifier released while active → confirm selection.
         if state == .active && !modifierHeld {
             state = .idle
-            DispatchQueue.main.async { [weak self] in
-                self?.delegate?.hotkeyDidConfirm()
-            }
+            notify { $0.hotkeyDidConfirm() }
         }
 
         // NEVER swallow flagsChanged — always pass through
@@ -226,9 +232,8 @@ final class HotkeyManager {
             // configured modifier + trigger key → activate switcher
             if modifierHeld && keyCode == triggerKey {
                 state = .active
-                DispatchQueue.main.async { [weak self] in
-                    self?.delegate?.hotkeyDidActivate(reverse: shiftDown)
-                }
+                let pressedAt = DispatchTime.now()
+                notify { $0.hotkeyDidActivate(reverse: shiftDown, pressedAt: pressedAt) }
                 return nil // swallow the trigger key
             }
 
@@ -237,49 +242,35 @@ final class HotkeyManager {
             // flagsChanged). Confirm as if released and let this key through normally.
             if !modifierHeld {
                 state = .idle
-                DispatchQueue.main.async { [weak self] in
-                    self?.delegate?.hotkeyDidConfirm()
-                }
+                notify { $0.hotkeyDidConfirm() }
                 return Unmanaged.passUnretained(event)
             }
             // The trigger key cycles selection (Shift = previous).
             if keyCode == triggerKey {
                 if shiftDown {
-                    DispatchQueue.main.async { [weak self] in
-                        self?.delegate?.hotkeyDidCyclePrevious()
-                    }
+                    notify { $0.hotkeyDidCyclePrevious() }
                 } else {
-                    DispatchQueue.main.async { [weak self] in
-                        self?.delegate?.hotkeyDidCycleNext()
-                    }
+                    notify { $0.hotkeyDidCycleNext() }
                 }
                 return nil // swallow
             }
             switch Int(keyCode) {
             case kVK_LeftArrow:
-                DispatchQueue.main.async { [weak self] in
-                    self?.delegate?.hotkeyDidCyclePrevious()
-                }
+                notify { $0.hotkeyDidCyclePrevious() }
                 return nil
 
             case kVK_RightArrow:
-                DispatchQueue.main.async { [weak self] in
-                    self?.delegate?.hotkeyDidCycleNext()
-                }
+                notify { $0.hotkeyDidCycleNext() }
                 return nil
 
             case kVK_Escape:
                 state = .idle
-                DispatchQueue.main.async { [weak self] in
-                    self?.delegate?.hotkeyDidCancel()
-                }
+                notify { $0.hotkeyDidCancel() }
                 return nil
 
             case kVK_Return:
                 state = .idle
-                DispatchQueue.main.async { [weak self] in
-                    self?.delegate?.hotkeyDidConfirm()
-                }
+                notify { $0.hotkeyDidConfirm() }
                 return nil
 
             default:
