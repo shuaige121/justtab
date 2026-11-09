@@ -21,6 +21,9 @@ final class SwitcherPanel: NSPanel {
 
     private var gridStack: NSStackView!      // vertical stack of row stacks
     private var thumbnailViews: [ThumbnailView] = []
+    /// Cells kept between openings and reused, so showing the switcher doesn't recreate
+    /// every image view and label.
+    private var pool: [ThumbnailView] = []
     private var selectedIndex: Int = 0
 
     override init(contentRect: NSRect, styleMask style: NSWindow.StyleMask, backing backingStoreType: NSWindow.BackingStoreType, defer flag: Bool) {
@@ -77,9 +80,8 @@ final class SwitcherPanel: NSPanel {
     func show(windows: [WindowInfo], selectedIndex: Int) {
         self.selectedIndex = selectedIndex
 
-        // Clear old rows + cells
-        gridStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        thumbnailViews.removeAll()
+        // Detach old rows; their cells go back to the pool.
+        clearRows()
 
         guard !windows.isEmpty else { return }
 
@@ -107,7 +109,14 @@ final class SwitcherPanel: NSPanel {
             for _ in 0..<columns {
                 guard index < windows.count else { break }
                 let captured = index
-                let view = ThumbnailView(windowInfo: windows[captured], width: cellWidth, height: cellHeight)
+                let view: ThumbnailView
+                if captured < pool.count {
+                    view = pool[captured]
+                } else {
+                    view = ThumbnailView(width: cellWidth, height: cellHeight)
+                    pool.append(view)
+                }
+                view.configure(with: windows[captured], width: cellWidth, height: cellHeight)
                 view.isSelected = (captured == selectedIndex)
                 view.onClicked = { [weak self] in self?.handleClick(index: captured) }
                 rowStack.addArrangedSubview(view)
@@ -139,9 +148,26 @@ final class SwitcherPanel: NSPanel {
         thumbnailViews[selectedIndex].isSelected = true
     }
 
+    /// Swaps in new pictures without rebuilding the grid. `windows` must be the list the
+    /// panel is showing (same order); otherwise it falls back to a full show.
+    func updateImages(windows: [WindowInfo]) {
+        guard windows.count == thumbnailViews.count else {
+            show(windows: windows, selectedIndex: selectedIndex)
+            return
+        }
+        for (view, window) in zip(thumbnailViews, windows) { view.setImage(for: window) }
+    }
+
     func dismiss() {
         orderOut(nil)
-        gridStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        clearRows()
+    }
+
+    private func clearRows() {
+        for row in gridStack.arrangedSubviews {
+            (row as? NSStackView)?.arrangedSubviews.forEach { $0.removeFromSuperview() }
+            row.removeFromSuperview()
+        }
         thumbnailViews.removeAll()
     }
 

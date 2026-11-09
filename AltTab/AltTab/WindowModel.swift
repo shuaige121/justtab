@@ -133,38 +133,27 @@ final class WindowModel {
         }
 
         // 2. Accessibility pass: minimized windows (not in the CG list) and missing titles.
-        for app in NSWorkspace.shared.runningApplications
-        where app.activationPolicy == .regular && app.processIdentifier != selfPID {
-            let axApp = AXUIElementCreateApplication(app.processIdentifier)
-            AXUIElementSetMessagingTimeout(axApp, Self.axEnumerationTimeout)
-            var windowsRef: CFTypeRef?
-            guard AXUIElementCopyAttributeValue(axApp, kAXWindowsAttribute as CFString, &windowsRef) == .success,
-                  let axWindows = windowsRef as? [AXUIElement] else { continue }
-
-            for axWindow in axWindows {
-                var windowID: CGWindowID = 0
-                _ = _AXUIElementGetWindow(axWindow, &windowID)
-                guard windowID != 0 else { continue }
-
-                if let index = untitled[windowID] {
-                    let title = Self.axString(axWindow, kAXTitleAttribute)
-                    if !title.isEmpty { windows[index] = windows[index].withTitle(title) }
-                    continue
-                }
-                guard !seenIDs.contains(windowID) else { continue }
-                var minimizedRef: CFTypeRef?
-                guard AXUIElementCopyAttributeValue(axWindow, kAXMinimizedAttribute as CFString, &minimizedRef) == .success,
-                      (minimizedRef as? Bool) == true else { continue }
-                seenIDs.insert(windowID)
-                windows.append(WindowInfo(
-                    windowID: windowID,
-                    ownerPID: app.processIdentifier,
-                    ownerName: app.localizedName ?? "Unknown",
-                    windowTitle: Self.axString(axWindow, kAXTitleAttribute),
-                    bounds: .zero,
-                    isMinimized: true,
-                    thumbnail: nil
-                ))
+        //    Apps are queried in parallel, so the pass costs about as much as the slowest
+        //    app instead of the sum of all of them.
+        let apps: [(pid: pid_t, name: String)] = NSWorkspace.shared.runningApplications
+            .filter { $0.activationPolicy == .regular && $0.processIdentifier != selfPID }
+            .map { ($0.processIdentifier, $0.localizedName ?? "Unknown") }
+        let needTitle = Set(untitled.keys)
+        let alreadySeen = seenIDs
+        var results = [AXAppScan](repeating: AXAppScan(), count: apps.count)
+        results.withUnsafeMutableBufferPointer { buffer in
+            DispatchQueue.concurrentPerform(iterations: apps.count) { i in
+                buffer[i] = Self.scanApp(pid: apps[i].pid, name: apps[i].name,
+                                         needTitle: needTitle, alreadySeen: alreadySeen)
+            }
+        }
+        for scan in results {
+            for (id, title) in scan.titles {
+                if let index = untitled[id] { windows[index] = windows[index].withTitle(title) }
+            }
+            for window in scan.minimized where !seenIDs.contains(window.windowID) {
+                seenIDs.insert(window.windowID)
+                windows.append(window)
             }
         }
 
@@ -174,6 +163,41 @@ final class WindowModel {
         windows.sort { (rank[$0.windowID] ?? Int.max) < (rank[$1.windowID] ?? Int.max) }
 
         return windows
+    }
+
+    /// What one app contributes to the list. Built on a worker thread; merged on main.
+    struct AXAppScan {
+        var titles: [CGWindowID: String] = [:]
+        var minimized: [WindowInfo] = []
+    }
+
+    /// One Accessibility round-trip for a single app. Safe to run concurrently for different apps.
+    private static func scanApp(pid: pid_t, name: String,
+                                needTitle: Set<CGWindowID>, alreadySeen: Set<CGWindowID>) -> AXAppScan {
+        var scan = AXAppScan()
+        let axApp = AXUIElementCreateApplication(pid)
+        AXUIElementSetMessagingTimeout(axApp, axEnumerationTimeout)
+        var windowsRef: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(axApp, kAXWindowsAttribute as CFString, &windowsRef) == .success,
+              let axWindows = windowsRef as? [AXUIElement] else { return scan }
+        for axWindow in axWindows {
+            var windowID: CGWindowID = 0
+            _ = _AXUIElementGetWindow(axWindow, &windowID)
+            guard windowID != 0 else { continue }
+            if needTitle.contains(windowID) {
+                let title = axString(axWindow, kAXTitleAttribute)
+                if !title.isEmpty { scan.titles[windowID] = title }
+                continue
+            }
+            guard !alreadySeen.contains(windowID) else { continue }
+            var minimizedRef: CFTypeRef?
+            guard AXUIElementCopyAttributeValue(axWindow, kAXMinimizedAttribute as CFString, &minimizedRef) == .success,
+                  (minimizedRef as? Bool) == true else { continue }
+            scan.minimized.append(WindowInfo(windowID: windowID, ownerPID: pid, ownerName: name,
+                                             windowTitle: axString(axWindow, kAXTitleAttribute),
+                                             bounds: .zero, isMinimized: true, thumbnail: nil))
+        }
+        return scan
     }
 
     private static func axString(_ element: AXUIElement, _ attribute: String) -> String {

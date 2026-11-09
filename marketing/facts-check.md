@@ -1,6 +1,6 @@
 # Facts check
 
-Fact IDs F1-F16 are from the allowed list. O1 = the owner's brief: on Windows, Alt-Tab means hold Alt, tap Tab, see every window, release to switch; on macOS Cmd-Tab switches apps, not windows; JustTab restores the Windows-style behavior with the default shortcut on the same keys.
+Fact IDs F1-F17 are from the allowed list. O1 = the owner's brief: on Windows, Alt-Tab means hold Alt, tap Tab, see every window, release to switch; on macOS Cmd-Tab switches apps, not windows; JustTab restores the Windows-style behavior with the default shortcut on the same keys.
 
 Files: P = positioning.md, R = readme-hero.md, L = launch-posts.md. The same claim appears in several places; it is listed once.
 
@@ -45,6 +45,19 @@ F17 (added 2026-11-09, owner's decision): JustTab is free forever: no paywall, n
 | 33 | Windows listed from all apps in one grid (contrast with Cmd-`) | F2, F15 | P |
 | 34 | Taglines "Alt-Tab window switching for macOS" / "Alt-Tab style window switching for macOS" are descriptive of the behavior | O1, F2, F3 | R, L |
 | 35 | Xiaohongshu title length 12 characters (<=20); Product Hunt tagline 40 characters (<=60); GitHub description well under 350 | (format limits in brief) | L |
+| 36 | "Windows-style Alt-Tab for Mac" / "像 Windows 一样 Alt+Tab 切换窗口" (descriptive phrase, generic keyboard term, no product name) | O1, F2, F3, F4 | R, L |
+| 37 | "Switch windows, not just apps" / "切换窗口，而不只是切换 App" | F2, F15 | R, L |
+| 38 | "Free forever; no paywall, no Pro tier, no upsell" now in first lines of README, GitHub description, HN comment, Reddit, Product Hunt, V2EX, Xiaohongshu | F17 | R, L |
+| 39 | "Nothing in the app will ever be sold" / "不会在应用内收费、销售任何功能" | F17 | R, L |
+| 40 | "One job, one real setting (the shortcut)" / "只做一件事，只有一个真正的设置" ("one job" = switching windows; positive focus statement, no other product named) | F2, F5, F17 (owner stance 5a) | R, L |
+| 41 | "A free, open-source window switcher for macOS that works like Alt-Tab on Windows" | F9, F17, O1 | R |
+| 42 | GitHub description (271 characters, limit 350): Option+Tab, Alt+Tab on a PC keyboard, live thumbnails, build from source, macOS 13+, fork of alttab-macos | F2, F3, F4, F9, F10, F12, F13, F17 | L |
+| 43 | GitHub topics `windows-style`, `switch-windows` (labels, not claims) | F2, O1 | L |
+| 44 | Show HN title "Windows-style Alt-Tab for Mac (switch windows, not apps)" (74 characters, limit 80) | O1, F2 | L |
+| 45 | Product Hunt tagline "Windows-style Alt-Tab for Mac: switch windows, not apps" (55 characters, limit 60) | O1, F2 | L |
+| 46 | Xiaohongshu title "Mac 上用 Alt+Tab 切窗口" (18 characters, limit 20); Alt+Tab is the physical key combination on a PC keyboard, Option+Tab otherwise | F4 | L |
+| 47 | V2EX title and tags (Mac, macOS, 窗口切换, 效率工具, 开源) | O1, F2, F9 | L |
+| 48 | Hashtags #Mac切换窗口 #Mac窗口切换 (labels) | F2 | L |
 
 Judgment notes:
 - "Alt-Tab style" is shorthand for claim 29 plus claims 2-4.

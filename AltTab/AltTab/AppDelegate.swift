@@ -124,8 +124,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, HotkeyDelegate {
             guard let self = self, self.switcherActive,
                   self.activationID == thisActivation else { return }
             self.currentWindows = updatedWindows
-            self.switcherPanel.show(windows: self.currentWindows,
-                                    selectedIndex: self.selectedIndex)
+            self.switcherPanel.updateImages(windows: self.currentWindows)
         }
 
         // Show immediately with cached thumbnails / icons

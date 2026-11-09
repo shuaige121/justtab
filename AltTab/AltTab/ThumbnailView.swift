@@ -27,11 +27,23 @@ final class ThumbnailView: NSView {
     private let titleLabel: NSTextField
     private let appLabel: NSTextField
     private let selectionBorder: NSView
-    private let thumbnailHeight: CGFloat
+    /// Height reserved below the image for the two labels.
+    private static let labelArea: CGFloat = 50
 
-    init(windowInfo: WindowInfo, width: CGFloat, height: CGFloat) {
-        self.thumbnailHeight = max(10, height - 50) // Reserve space for labels
+    // Size constraints, kept so a pooled view can be resized when it is reused.
+    private var widthConstraint: NSLayoutConstraint!
+    private var heightConstraint: NSLayoutConstraint!
+    private var imageWidthConstraint: NSLayoutConstraint!
+    private var imageHeightConstraint: NSLayoutConstraint!
 
+    convenience init(windowInfo: WindowInfo, width: CGFloat, height: CGFloat) {
+        self.init(width: width, height: height)
+        configure(with: windowInfo, width: width, height: height)
+    }
+
+    /// Creates an empty cell. The switcher keeps a pool of these and reuses them, so
+    /// opening it doesn't rebuild every view.
+    init(width: CGFloat, height: CGFloat) {
         imageView = NSImageView()
         titleLabel = NSTextField(labelWithString: "")
         appLabel = NSTextField(labelWithString: "")
@@ -40,7 +52,6 @@ final class ThumbnailView: NSView {
         super.init(frame: NSRect(x: 0, y: 0, width: width, height: height))
 
         setupViews(width: width, height: height)
-        configure(with: windowInfo)
     }
 
     required init?(coder: NSCoder) {
@@ -88,6 +99,10 @@ final class ThumbnailView: NSView {
         addSubview(appLabel)
 
         // Constraints
+        widthConstraint = widthAnchor.constraint(equalToConstant: width)
+        heightConstraint = heightAnchor.constraint(equalToConstant: height)
+        imageWidthConstraint = imageView.widthAnchor.constraint(equalToConstant: width - 16)
+        imageHeightConstraint = imageView.heightAnchor.constraint(equalToConstant: max(10, height - Self.labelArea))
         NSLayoutConstraint.activate([
             // Selection border fills entire view
             selectionBorder.topAnchor.constraint(equalTo: topAnchor),
@@ -98,8 +113,8 @@ final class ThumbnailView: NSView {
             // Image at top
             imageView.topAnchor.constraint(equalTo: topAnchor, constant: 8),
             imageView.centerXAnchor.constraint(equalTo: centerXAnchor),
-            imageView.widthAnchor.constraint(equalToConstant: width - 16),
-            imageView.heightAnchor.constraint(equalToConstant: thumbnailHeight),
+            imageWidthConstraint,
+            imageHeightConstraint,
 
             // Title below image
             titleLabel.topAnchor.constraint(equalTo: imageView.bottomAnchor, constant: 4),
@@ -112,24 +127,33 @@ final class ThumbnailView: NSView {
             appLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -4),
 
             // Fixed size
-            widthAnchor.constraint(equalToConstant: width),
-            heightAnchor.constraint(equalToConstant: height),
+            widthConstraint,
+            heightConstraint,
         ])
     }
 
-    private func configure(with windowInfo: WindowInfo) {
+    /// Points a (possibly reused) cell at a window and resizes it.
+    func configure(with windowInfo: WindowInfo, width: CGFloat, height: CGFloat) {
+        if widthConstraint.constant != width { widthConstraint.constant = width }
+        if heightConstraint.constant != height { heightConstraint.constant = height }
+        imageWidthConstraint.constant = width - 16
+        imageHeightConstraint.constant = max(10, height - Self.labelArea)
+        isSelected = false
+        onClicked = nil
         titleLabel.stringValue = windowInfo.windowTitle.isEmpty ? windowInfo.ownerName : windowInfo.windowTitle
         appLabel.stringValue = windowInfo.ownerName
+        setImage(for: windowInfo)
+    }
 
+    /// Updates only the picture, e.g. when a fresh thumbnail arrives while the switcher is open.
+    func setImage(for windowInfo: WindowInfo) {
         if let thumbnail = windowInfo.thumbnail {
             imageView.image = thumbnail
+            imageView.alphaValue = 1
         } else {
             // Fallback: app icon
-            let icon = windowInfo.appIcon
-            imageView.image = icon
-            if windowInfo.isMinimized {
-                imageView.alphaValue = 0.7
-            }
+            imageView.image = windowInfo.appIcon
+            imageView.alphaValue = windowInfo.isMinimized ? 0.7 : 1
         }
     }
 
