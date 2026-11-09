@@ -15,11 +15,15 @@ import ScreenCaptureKit
 
 final class WindowCapture {
 
+    /// Returns whether Screen Recording is granted. Capture is skipped without it, so a
+    /// denied permission can't make macOS re-prompt in the middle of a switch.
+    var isAllowed: () -> Bool = { CGPreflightScreenCaptureAccess() }
+
     /// Captures thumbnails for on-screen windows asynchronously, then calls
     /// `completion` on the main thread with the enriched WindowInfo array.
     func captureThumbnails(for windows: [WindowInfo], completion: @escaping ([WindowInfo]) -> Void) {
-        guard #available(macOS 14.0, *) else {
-            completion(windows) // older macOS: icons only
+        guard #available(macOS 14.0, *), isAllowed() else {
+            completion(windows) // older macOS or no Screen Recording: icons only
             return
         }
         Task {

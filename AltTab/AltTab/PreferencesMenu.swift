@@ -2,8 +2,9 @@
 //  PreferencesMenu.swift
 //  JustTab — minimal window switcher for macOS
 //
-//  Status bar dropdown: "Change Shortcut…" (the only real setting), a
-//  "Launch at Login" toggle (SMAppService, macOS 13+), About, and Quit.
+//  Status bar dropdown: permission shortcuts (shown only while something is
+//  missing), "Change Shortcut…" (the only real setting), a "Launch at Login"
+//  toggle (SMAppService, macOS 13+), About, and Quit.
 //
 //  Based on alttab-macos by Sergio Farfan (MIT).
 //
@@ -12,13 +13,31 @@ import Cocoa
 import Carbon.HIToolbox
 import ServiceManagement
 
-final class PreferencesMenu {
+final class PreferencesMenu: NSObject, NSMenuDelegate {
 
     let menu: NSMenu
     private var recorderWC: ShortcutRecorderWindowController?
+    private let permissionManager: PermissionManager
+    private let accessibilityItem = NSMenuItem(title: "⚠︎ Grant Accessibility Permission…",
+                                               action: nil, keyEquivalent: "")
+    private let thumbnailsItem = NSMenuItem(title: "Enable Live Thumbnails (Screen Recording)…",
+                                            action: nil, keyEquivalent: "")
+    private let permissionSeparator = NSMenuItem.separator()
+    private var launchItem: NSMenuItem!
 
-    init() {
+    init(permissionManager: PermissionManager) {
+        self.permissionManager = permissionManager
         menu = NSMenu()
+        super.init()
+        menu.delegate = self
+
+        accessibilityItem.action = #selector(grantAccessibility(_:))
+        accessibilityItem.target = self
+        menu.addItem(accessibilityItem)
+        thumbnailsItem.action = #selector(enableThumbnails(_:))
+        thumbnailsItem.target = self
+        menu.addItem(thumbnailsItem)
+        menu.addItem(permissionSeparator)
 
         let changeShortcutItem = NSMenuItem(title: "Change Shortcut…",
                                             action: #selector(changeShortcut(_:)),
@@ -28,12 +47,12 @@ final class PreferencesMenu {
 
         menu.addItem(NSMenuItem.separator())
 
-        let launchItem = NSMenuItem(title: "Launch at Login",
-                                    action: #selector(toggleLaunchAtLogin(_:)),
-                                    keyEquivalent: "")
+        launchItem = NSMenuItem(title: "Launch at Login",
+                                action: #selector(toggleLaunchAtLogin(_:)),
+                                keyEquivalent: "")
         launchItem.target = self
-        launchItem.state = Self.isLaunchAtLoginEnabled ? .on : .off
         menu.addItem(launchItem)
+        menuNeedsUpdate(menu)
 
         menu.addItem(NSMenuItem.separator())
 
@@ -52,6 +71,33 @@ final class PreferencesMenu {
         menu.addItem(quitItem)
     }
 
+    // MARK: - Menu state
+
+    /// Refreshed every time the menu opens, so it always reflects the live permission state.
+    func menuNeedsUpdate(_ menu: NSMenu) {
+        let accessibility = AXIsProcessTrusted()
+        accessibilityItem.isHidden = accessibility
+        thumbnailsItem.isHidden = !accessibility || permissionManager.hasScreenRecording
+        permissionSeparator.isHidden = accessibilityItem.isHidden && thumbnailsItem.isHidden
+        if #available(macOS 13.0, *) {
+            switch SMAppService.mainApp.status {
+            case .enabled: launchItem.state = .on; launchItem.title = "Launch at Login"
+            case .requiresApproval: launchItem.state = .mixed; launchItem.title = "Launch at Login (needs approval)…"
+            default: launchItem.state = .off; launchItem.title = "Launch at Login"
+            }
+        }
+    }
+
+    // MARK: - Permissions
+
+    @objc private func grantAccessibility(_ sender: NSMenuItem) {
+        permissionManager.promptForAccessibility()
+    }
+
+    @objc private func enableThumbnails(_ sender: NSMenuItem) {
+        permissionManager.requestScreenRecording()
+    }
+
     // MARK: - Shortcut
 
     @objc private func changeShortcut(_ sender: NSMenuItem) {
@@ -65,15 +111,12 @@ final class PreferencesMenu {
 
     // MARK: - Launch at Login
 
-    private static var isLaunchAtLoginEnabled: Bool {
-        if #available(macOS 13.0, *) {
-            return SMAppService.mainApp.status == .enabled
-        }
-        return false
-    }
-
     @objc private func toggleLaunchAtLogin(_ sender: NSMenuItem) {
         if #available(macOS 13.0, *) {
+            if SMAppService.mainApp.status == .requiresApproval {
+                SMAppService.openSystemSettingsLoginItems()
+                return
+            }
             do {
                 if SMAppService.mainApp.status == .enabled {
                     try SMAppService.mainApp.unregister()

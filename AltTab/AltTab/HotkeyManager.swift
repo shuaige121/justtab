@@ -54,11 +54,14 @@ final class HotkeyManager {
     private static let baseTapRetryInterval: TimeInterval = 0.5
     private var tapRetryCount = 0
 
+    /// Safe to call repeatedly: does nothing while a tap is already installed.
     func start() {
+        guard eventTap == nil else { return }
+        tapRetryCount = 0
         if !installEventTap() {
             scheduleRetry()
         }
-        startReEnablePolling()
+        if reEnableTimer == nil { startReEnablePolling() }
     }
 
     /// Retry event tap creation with exponential back-off.
@@ -90,11 +93,13 @@ final class HotkeyManager {
     func stop() {
         reEnableTimer?.invalidate()
         reEnableTimer = nil
+        state = .idle
         if let tap = eventTap {
             CGEvent.tapEnable(tap: tap, enable: false)
             if let source = runLoopSource {
-                CFRunLoopRemoveSource(CFRunLoopGetCurrent(), source, .commonModes)
+                CFRunLoopRemoveSource(CFRunLoopGetMain(), source, .commonModes)
             }
+            CFMachPortInvalidate(tap)
             eventTap = nil
             runLoopSource = nil
         }
@@ -117,14 +122,15 @@ final class HotkeyManager {
             callback: hotkeyEventCallback,
             userInfo: userInfo
         ) else {
-            NSLog("AltTab: Failed to create event tap. Is Accessibility enabled?")
+            justTabLog.error("event tap creation failed (Accessibility not granted?)")
             return false
         }
 
         eventTap = tap
         runLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0)
-        CFRunLoopAddSource(CFRunLoopGetCurrent(), runLoopSource, .commonModes)
+        CFRunLoopAddSource(CFRunLoopGetMain(), runLoopSource, .commonModes)
         CGEvent.tapEnable(tap: tap, enable: true)
+        justTabLog.info("event tap installed")
         return true
     }
 

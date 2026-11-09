@@ -1,73 +1,165 @@
 //
 //  PermissionManager.swift
-//  AltTab — Windows-style Window Switcher for macOS
+//  JustTab — minimal window switcher for macOS
 //
-//  Manages macOS permission requirements. Checks and prompts for Accessibility
-//  access (required for CGEvent taps and AXUIElement window management) with
-//  a polling timer that posts a notification when granted. Detects Screen
-//  Recording permission by probing CGWindowListCopyWindowInfo for window names.
+//  Watches the permissions JustTab depends on for the app's whole lifetime and asks
+//  for whatever is missing, so the user only has to click once in the system dialog:
 //
-//  Author:  Sergio Farfan <sergio.farfan@gmail.com>
-//  Version: 1.1.0
-//  Date:    2026-03-17
-//  License: MIT
+//  - Accessibility (required for the shortcut): checked every 2 s. When missing, the
+//    system prompt is shown (it also lists JustTab in System Settings, and its button
+//    opens that exact pane). Shown shortly after launch, immediately if the permission
+//    is revoked while running, and again every 15 minutes while it stays off.
+//  - Screen Recording (optional, live thumbnails): the system prompt is shown once,
+//    right after Accessibility is in place. macOS never shows it a second time, so the
+//    menu item opens the Screen Recording pane instead.
+//  - Launch at Login: if macOS is waiting for approval, offer to open Login Items once.
+//
+//  Granting takes effect within one check; no relaunch is needed for Accessibility.
+//  State changes are logged under subsystem com.leonardchow.justtab.
+//
+//  Based on alttab-macos by Sergio Farfan (MIT).
 //
 
 import Cocoa
 import ApplicationServices
+import ServiceManagement
+import os
+
+let justTabLog = Logger(subsystem: "com.leonardchow.justtab", category: "permissions")
 
 final class PermissionManager {
 
-    private var pollTimer: Timer?
-
-    /// Checks Accessibility permission, prompting if needed, and polls until granted.
-    func ensureAccessibility() {
-        let trusted = AXIsProcessTrusted()
-        if !trusted {
-            promptForAccessibility()
-            startPolling()
+    /// System hooks, injectable so the monitoring logic can be tested without TCC.
+    struct Environment {
+        var isAccessibilityTrusted: () -> Bool = { AXIsProcessTrusted() }
+        var promptAccessibility: () -> Void = {
+            let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue(): true] as CFDictionary
+            AXIsProcessTrustedWithOptions(options)
         }
+        var hasScreenRecording: () -> Bool = { CGPreflightScreenCaptureAccess() }
+        var requestScreenRecording: () -> Void = { CGRequestScreenCaptureAccess() }
+        var openScreenRecordingSettings: () -> Void = {
+            if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture") {
+                NSWorkspace.shared.open(url)
+            }
+        }
+        var loginItemRequiresApproval: () -> Bool = {
+            if #available(macOS 13.0, *) { return SMAppService.mainApp.status == .requiresApproval }
+            return false
+        }
+        var offerLoginItemApproval: () -> Void = PermissionManager.showLoginItemAlert
+        var now: () -> Date = { Date() }
+        var defaults: UserDefaults = .standard
     }
 
-    /// Shows the system prompt for Accessibility permission.
-    private func promptForAccessibility() {
-        let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue(): true] as CFDictionary
-        AXIsProcessTrustedWithOptions(options)
+    /// Called on the main thread whenever Accessibility flips (and once for the initial state).
+    var onAccessibilityChange: ((Bool) -> Void)?
+
+    static let checkInterval: TimeInterval = 2
+    /// At login TCC can briefly report "not trusted" before it is ready; wait this long
+    /// before the first prompt so a reboot doesn't show a spurious dialog.
+    static let launchGrace: TimeInterval = 1.5
+    static let reminderInterval: TimeInterval = 15 * 60
+    static let screenRecordingAskedKey = "JustTab.screenRecordingAsked"
+
+    private let env: Environment
+    private var timer: Timer?
+    private(set) var accessibilityGranted: Bool?
+    private var screenRecordingGranted: Bool?
+    private var nextAccessibilityPrompt: Date?
+    private var loginItemChecked = false
+
+    init(environment: Environment = Environment()) {
+        self.env = environment
     }
 
-    /// Polls every 2 seconds until Accessibility is granted.
-    private func startPolling() {
-        pollTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] timer in
-            if AXIsProcessTrusted() {
-                timer.invalidate()
-                self?.pollTimer = nil
-                NotificationCenter.default.post(name: .accessibilityGranted, object: nil)
+    var hasScreenRecording: Bool { env.hasScreenRecording() }
+
+    func startMonitoring() {
+        guard timer == nil else { return }
+        check()
+        let t = Timer(timeInterval: Self.checkInterval, repeats: true) { [weak self] _ in self?.check() }
+        RunLoop.main.add(t, forMode: .common)
+        timer = t
+    }
+
+    /// One monitoring pass. Internal (not private) so tests can drive it with a fake clock.
+    func check() {
+        let ax = env.isAccessibilityTrusted()
+        if ax != accessibilityGranted {
+            let isLaunch = accessibilityGranted == nil
+            accessibilityGranted = ax
+            justTabLog.info("accessibility=\(ax ? "granted" : "missing", privacy: .public)")
+            if ax {
+                nextAccessibilityPrompt = nil
+            } else {
+                nextAccessibilityPrompt = env.now().addingTimeInterval(isLaunch ? Self.launchGrace : 0)
+            }
+            onAccessibilityChange?(ax)
+        }
+
+        if !ax, let due = nextAccessibilityPrompt, env.now() >= due {
+            promptForAccessibility()
+        }
+
+        let sr = env.hasScreenRecording()
+        if sr != screenRecordingGranted {
+            screenRecordingGranted = sr
+            justTabLog.info("screenRecording=\(sr ? "granted" : "missing", privacy: .public)")
+        }
+
+        // Ask for the optional permissions only once Accessibility is settled, so the user
+        // never gets two system dialogs stacked on top of each other.
+        if ax {
+            requestScreenRecordingIfNeverAsked()
+            if !loginItemChecked {
+                loginItemChecked = true
+                if env.loginItemRequiresApproval() {
+                    justTabLog.info("loginItem=requiresApproval, offering to open Login Items")
+                    env.offerLoginItemApproval()
+                }
             }
         }
     }
 
-    /// Cached result of the Screen Recording permission probe.
-    /// Checked once at first access to avoid re-triggering the macOS 15
-    /// "Screen & System Audio Recording" prompt on every Option+Tab.
-    private static var _screenRecordingCached: Bool?
+    // MARK: - Actions (also used by the menu)
 
-    static var hasScreenRecordingPermission: Bool {
-        if let cached = _screenRecordingCached { return cached }
-        let result = probeScreenRecordingPermission()
-        _screenRecordingCached = result
-        return result
+    func promptForAccessibility() {
+        justTabLog.info("prompting for accessibility")
+        env.promptAccessibility()
+        nextAccessibilityPrompt = env.now().addingTimeInterval(Self.reminderInterval)
     }
 
-    /// Probes Screen Recording permission by checking if CGWindowList returns window names.
-    /// This may trigger a one-time system prompt on macOS 15+.
-    private static func probeScreenRecordingPermission() -> Bool {
-        let windowList = CGWindowListCopyWindowInfo([.optionOnScreenOnly], kCGNullWindowID) as? [[CFString: Any]]
-        guard let list = windowList, let first = list.first else { return false }
-        return first[kCGWindowName] != nil
+    /// Menu action: first time shows the system prompt, afterwards opens the pane directly.
+    func requestScreenRecording() {
+        guard !env.hasScreenRecording() else { return }
+        if env.defaults.bool(forKey: Self.screenRecordingAskedKey) {
+            justTabLog.info("opening Screen Recording settings")
+            env.openScreenRecordingSettings()
+        } else {
+            requestScreenRecordingIfNeverAsked()
+        }
     }
 
-}
+    private func requestScreenRecordingIfNeverAsked() {
+        guard !env.hasScreenRecording(),
+              !env.defaults.bool(forKey: Self.screenRecordingAskedKey) else { return }
+        env.defaults.set(true, forKey: Self.screenRecordingAskedKey)
+        justTabLog.info("prompting for screen recording (first time)")
+        env.requestScreenRecording()
+    }
 
-extension Notification.Name {
-    static let accessibilityGranted = Notification.Name("com.alttab.accessibilityGranted")
+    private static func showLoginItemAlert() {
+        DispatchQueue.main.async {
+            let alert = NSAlert()
+            alert.messageText = "Allow JustTab to start at login"
+            alert.informativeText = "Launch at Login is on, but macOS is waiting for your approval in Login Items."
+            alert.addButton(withTitle: "Open Login Items")
+            alert.addButton(withTitle: "Not Now")
+            NSApp.activate(ignoringOtherApps: true)
+            if alert.runModal() == .alertFirstButtonReturn, #available(macOS 13.0, *) {
+                SMAppService.openSystemSettingsLoginItems()
+            }
+        }
+    }
 }

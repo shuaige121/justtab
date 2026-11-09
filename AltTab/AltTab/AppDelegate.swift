@@ -36,11 +36,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, HotkeyDelegate {
         NSLog("AltTab: applicationDidFinishLaunching")
         NSApp.setActivationPolicy(.accessory)
 
-        setupStatusItem()
         permissionManager = PermissionManager()
+        setupStatusItem()
 
         windowModel = WindowModel()
         windowCapture = WindowCapture()
+        windowCapture.isAllowed = { [weak self] in self?.permissionManager.hasScreenRecording ?? false }
         switcherPanel = SwitcherPanel()
 
         hotkeyManager = HotkeyManager()
@@ -57,49 +58,47 @@ class AppDelegate: NSObject, NSApplicationDelegate, HotkeyDelegate {
             self.hotkeyDidConfirm()
         }
 
-        if AXIsProcessTrusted() {
-            hotkeyManager.start()
-            NSLog("AltTab: Accessibility already granted, hotkey active")
-        } else {
-            // At login the TCC daemon may not be ready yet, causing a false negative.
-            // Wait briefly and recheck before prompting the user.
-            NSLog("AltTab: Accessibility not yet trusted, will recheck before prompting")
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
-                guard let self = self else { return }
-                if AXIsProcessTrusted() {
-                    NSLog("AltTab: Accessibility granted after brief wait, hotkey active")
-                    self.hotkeyManager.start()
-                } else {
-                    NSLog("AltTab: Accessibility still not trusted, prompting user")
-                    self.permissionManager.ensureAccessibility()
-                    NotificationCenter.default.addObserver(
-                        forName: .accessibilityGranted, object: nil, queue: .main
-                    ) { [weak self] _ in
-                        NSLog("AltTab: Accessibility granted, starting hotkey manager")
-                        self?.hotkeyManager.start()
-                    }
-                }
+        // The permission monitor runs for the app's lifetime: it starts the hotkey as soon
+        // as Accessibility is granted (no relaunch), and recreates the event tap if the
+        // permission is revoked and granted again.
+        permissionManager.onAccessibilityChange = { [weak self] granted in
+            guard let self = self else { return }
+            self.updateStatusIcon(accessibilityGranted: granted)
+            if granted {
+                self.hotkeyManager.stop()
+                self.hotkeyManager.start()
+            } else {
+                self.hotkeyManager.stop()
+                self.hotkeyDidCancel()
             }
         }
+        permissionManager.startMonitoring()
     }
 
     // MARK: - Status Bar
 
     private func setupStatusItem() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        if let button = statusItem.button {
-            if let img = NSImage(systemSymbolName: "rectangle.on.rectangle",
-                                  accessibilityDescription: "JustTab") {
-                img.isTemplate = true
-                button.image = img
-            } else {
-                // Fallback if SF Symbol unavailable
-                button.title = "⌃⇥"
-            }
-        }
-        preferencesMenu = PreferencesMenu()
+        updateStatusIcon(accessibilityGranted: AXIsProcessTrusted())
+        preferencesMenu = PreferencesMenu(permissionManager: permissionManager)
         statusItem.menu = preferencesMenu.menu
         NSLog("JustTab: Status item installed")
+    }
+
+    /// Normal icon when the shortcut works; a warning triangle while Accessibility is missing.
+    private func updateStatusIcon(accessibilityGranted: Bool) {
+        guard let button = statusItem?.button else { return }
+        let symbol = accessibilityGranted ? "rectangle.on.rectangle" : "exclamationmark.triangle"
+        let label = accessibilityGranted ? "JustTab" : "JustTab needs Accessibility permission"
+        if let img = NSImage(systemSymbolName: symbol, accessibilityDescription: label) {
+            img.isTemplate = true
+            button.image = img
+            button.title = ""
+        } else {
+            button.image = nil
+            button.title = accessibilityGranted ? "⇥" : "⚠︎"
+        }
+        button.toolTip = label
     }
 
     // MARK: - HotkeyDelegate
