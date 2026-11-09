@@ -42,11 +42,14 @@ enum WindowActivator {
 
         // The expensive part — synchronous AX IPC to fetch the app's window list and raise
         // the target — runs off the main thread.
+        let started = DispatchTime.now()
         axQueue.async {
             if window.isMinimized {
                 unminimize(window: window)
             }
             raiseWindow(window: window)
+            let ms = Double(DispatchTime.now().uptimeNanoseconds - started.uptimeNanoseconds) / 1_000_000
+            perfLog.info("raise: \(String(format: "%.1f", ms), privacy: .public) ms (\(window.ownerName, privacy: .public))")
         }
     }
 

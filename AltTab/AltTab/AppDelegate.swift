@@ -104,8 +104,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, HotkeyDelegate {
     // MARK: - HotkeyDelegate
 
     func hotkeyDidActivate(reverse: Bool) {
+        let started = DispatchTime.now()
         currentWindows = windowModel.enumerateWindows()
+        let enumerated = DispatchTime.now()
         guard !currentWindows.isEmpty else { return }
+        // Last known thumbnails first, so the panel opens with images instead of icons.
+        currentWindows = windowCapture.applyCached(to: currentWindows)
         // Start on the second window (MRU), or on the last one for Shift+trigger.
         selectedIndex = reverse ? currentWindows.count - 1 : min(1, currentWindows.count - 1)
         switcherActive = true
@@ -115,7 +119,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, HotkeyDelegate {
         // Capture thumbnails asynchronously. Capture can take over a second, so the result
         // may arrive after this switcher was dismissed and a new one opened; applying it then
         // would replace the new window list with this stale one and switch to the wrong window.
-        windowCapture.captureThumbnails(for: currentWindows) { [weak self] updatedWindows in
+        windowCapture.captureThumbnails(for: currentWindows) { [weak self] updatedWindows, captured in
+            perfLog.info("thumbnails: \(captured, privacy: .public) captured in \(Self.ms(since: started), privacy: .public) ms")
             guard let self = self, self.switcherActive,
                   self.activationID == thisActivation else { return }
             self.currentWindows = updatedWindows
@@ -123,8 +128,19 @@ class AppDelegate: NSObject, NSApplicationDelegate, HotkeyDelegate {
                                     selectedIndex: self.selectedIndex)
         }
 
-        // Show immediately with placeholder icons
+        // Show immediately with cached thumbnails / icons
         switcherPanel.show(windows: currentWindows, selectedIndex: selectedIndex)
+        let cachedCount = currentWindows.filter { $0.thumbnail != nil }.count
+        perfLog.info("""
+            activate: \(self.currentWindows.count, privacy: .public) windows, \
+            list \(Self.ms(enumerated, since: started), privacy: .public) ms, \
+            panel shown at \(Self.ms(since: started), privacy: .public) ms, \
+            \(cachedCount, privacy: .public) cached thumbnails
+            """)
+    }
+
+    private static func ms(_ end: DispatchTime = .now(), since start: DispatchTime) -> String {
+        String(format: "%.1f", Double(end.uptimeNanoseconds - start.uptimeNanoseconds) / 1_000_000)
     }
 
     func hotkeyDidCycleNext() {

@@ -24,8 +24,10 @@ import Cocoa
 import ApplicationServices
 import ServiceManagement
 import os
+import ScreenCaptureKit
 
 let justTabLog = Logger(subsystem: "com.leonardchow.justtab", category: "permissions")
+let perfLog = Logger(subsystem: "com.leonardchow.justtab", category: "perf")
 
 final class PermissionManager {
 
@@ -37,10 +39,20 @@ final class PermissionManager {
             AXIsProcessTrustedWithOptions(options)
         }
         var hasScreenRecording: () -> Bool = { CGPreflightScreenCaptureAccess() }
-        var requestScreenRecording: () -> Void = { CGRequestScreenCaptureAccess() }
+        var requestScreenRecording: () -> Void = {
+            CGRequestScreenCaptureAccess()
+            // Also query ScreenCaptureKit, the API the thumbnails actually use, so macOS
+            // registers JustTab for Screen Recording and lists it in System Settings.
+            if #available(macOS 14.0, *) {
+                SCShareableContent.getExcludingDesktopWindows(false, onScreenWindowsOnly: true) { _, _ in }
+            }
+        }
         var openScreenRecordingSettings: () -> Void = {
-            if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture") {
-                NSWorkspace.shared.open(url)
+            // Give macOS a moment to add JustTab to the list before the pane opens.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture") {
+                    NSWorkspace.shared.open(url)
+                }
             }
         }
         var loginItemRequiresApproval: () -> Bool = {
@@ -60,7 +72,9 @@ final class PermissionManager {
     /// before the first prompt so a reboot doesn't show a spurious dialog.
     static let launchGrace: TimeInterval = 1.5
     static let reminderInterval: TimeInterval = 15 * 60
-    static let screenRecordingAskedKey = "JustTab.screenRecordingAsked"
+    /// v2: the first build's request didn't reliably list JustTab in System Settings, so
+    /// anyone who saw only that one is asked once more.
+    static let screenRecordingAskedKey = "JustTab.screenRecordingAsked.v2"
 
     private let env: Environment
     private var timer: Timer?
@@ -130,15 +144,14 @@ final class PermissionManager {
         nextAccessibilityPrompt = env.now().addingTimeInterval(Self.reminderInterval)
     }
 
-    /// Menu action: first time shows the system prompt, afterwards opens the pane directly.
+    /// Menu action: register JustTab for Screen Recording (macOS shows its own prompt the
+    /// first time) and open the pane, where JustTab is now listed, so one switch finishes it.
     func requestScreenRecording() {
         guard !env.hasScreenRecording() else { return }
-        if env.defaults.bool(forKey: Self.screenRecordingAskedKey) {
-            justTabLog.info("opening Screen Recording settings")
-            env.openScreenRecordingSettings()
-        } else {
-            requestScreenRecordingIfNeverAsked()
-        }
+        env.defaults.set(true, forKey: Self.screenRecordingAskedKey)
+        justTabLog.info("requesting screen recording from menu, opening settings")
+        env.requestScreenRecording()
+        env.openScreenRecordingSettings()
     }
 
     private func requestScreenRecordingIfNeverAsked() {
