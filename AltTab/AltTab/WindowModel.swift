@@ -29,6 +29,10 @@ struct WindowInfo {
     let isMinimized: Bool
     /// Topmost window of its app on this Space; activating the app alone brings it up.
     var isFrontOfApp = false
+    /// Its app is hidden (⌘H); the window must be unhidden before it can come forward.
+    var isHidden = false
+    /// Not on screen, not minimized and its app not hidden: on another Space.
+    var isOnOtherSpace = false
     var thumbnail: NSImage?
 
     /// Returns the app icon for this window's owner process, served from an in-memory
