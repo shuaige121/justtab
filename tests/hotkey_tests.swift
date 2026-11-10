@@ -90,8 +90,10 @@ final class FakeRegistrar: HotKeyRegistrar {
     func press(_ id: UInt32) { if active[id] != nil { onPress?(id) }; spin() }
 }
 var secureOn = false
+var fakeSystemShortcuts: Set<CarbonHotKey> = []
 func secureManager(_ reg: FakeRegistrar, poll: TimeInterval = 60) -> (HotkeyManager, Rec) {
-    let m = HotkeyManager(isSecureInputEnabled: { secureOn }, hotKeyRegistrar: reg, secureInputPollInterval: poll)
+    let m = HotkeyManager(isSecureInputEnabled: { secureOn }, hotKeyRegistrar: reg, secureInputPollInterval: poll,
+                          systemShortcuts: { fakeSystemShortcuts })
     let r = Rec(); m.delegate = r; return (m, r)
 }
 let opt: CGEventFlags = .maskAlternate
@@ -196,6 +198,71 @@ do { // S9 recording a new shortcut: the timer drops the fallback so the recorde
         check("recording a shortcut: fallback unregistered", reg.calls.count == 4 && reg.active.isEmpty, "\(reg.calls)")
         ShortcutSettings.shared.isRecording = false
     }
+}
+// ===== Recording any shortcut =====
+do { // R1 while recording, the tap hands ⌘Tab to the recorder and swallows it
+    ShortcutSettings.shared.set(modifierFlags: opt, keyCode: Int64(kVK_Tab))
+    let m = HotkeyManager(); let r = Rec(); m.delegate = r
+    var got: [(CGEventFlags, Int64)] = []
+    ShortcutSettings.shared.isRecording = true
+    ShortcutSettings.shared.recordHandler = { got.append(($0, $1)) }
+    let passed = send(m, .keyDown, key(kVK_Tab, [cmd, .maskNonCoalesced]))
+    let passedFlags = send(m, .flagsChanged, flagsEvent(cmd))
+    ShortcutSettings.shared.isRecording = false; ShortcutSettings.shared.recordHandler = nil
+    check("recording: ⌘Tab goes to the recorder, swallowed, switcher untouched",
+          !passed && passedFlags && got.count == 1 && got[0].0 == cmd && got[0].1 == Int64(kVK_Tab) && r.log.isEmpty,
+          "passed=\(passed) got=\(got.map { ($0.0.rawValue, $0.1) }) log=\(r.log)")
+}
+do { // R2 record(): any key with a modifier is saved; Esc alone cancels; no modifier is refused
+    let s = ShortcutSettings.shared
+    s.set(modifierFlags: opt, keyCode: Int64(kVK_Tab))
+    let esc = s.record(modifiers: [], keyCode: Int64(kVK_Escape))
+    let bare = s.record(modifiers: [], keyCode: Int64(kVK_ANSI_A))
+    let unchanged = s.modifierFlags == opt && s.keyCode == Int64(kVK_Tab)
+    let f5 = s.record(modifiers: [.maskControl, .maskShift], keyCode: Int64(kVK_F5))
+    check("record: Esc cancels, bare key refused, ⌃⇧F5 saved",
+          esc == .cancelled && bare == .needsModifier && unchanged && f5 == .recorded
+          && s.modifierFlags == [.maskControl, .maskShift] && s.keyCode == Int64(kVK_F5),
+          "\(esc) \(bare) \(unchanged) \(f5) \(s.displayString)")
+    s.set(modifierFlags: opt, keyCode: Int64(kVK_Tab))
+}
+do { // R3 every key has a readable name
+    let names = [kVK_Tab, kVK_F5, kVK_F13, kVK_LeftArrow, kVK_Return, kVK_ANSI_A, kVK_ANSI_Grave].map { ShortcutSettings.keyName(Int64($0)) }
+    let letter = names[5]
+    check("key names: Tab, F5, F13, ←, ↩ fixed; A and ` from the layout",
+          Array(names[0...4]) == ["Tab", "F5", "F13", "←", "↩"] && letter.count == 1 && letter == letter.uppercased()
+          && names[6].count == 1 && !names.contains { $0.hasPrefix("Key ") },
+          "\(names)")
+    check("display: ⌃⌥⇧⌘ order", ShortcutSettings.display([.maskCommand, .maskShift, .maskAlternate, .maskControl], keyCode: Int64(kVK_Space)) == "⌃⌥⇧⌘Space")
+}
+do { // R4 system shortcuts: parsed from CopySymbolicHotKeys entries; ⌘Tab always counts
+    let raw: [[String: Any]] = [
+        [kHISymbolicHotKeyCode as String: kVK_Space, kHISymbolicHotKeyModifiers as String: cmdKey | 0x20000, kHISymbolicHotKeyEnabled as String: true],
+        [kHISymbolicHotKeyCode as String: kVK_ANSI_Grave, kHISymbolicHotKeyModifiers as String: cmdKey, kHISymbolicHotKeyEnabled as String: false],
+    ]
+    let parsed = ShortcutSettings.parseSymbolicHotKeys(raw)
+    let cmdSpace = CarbonHotKey(keyCode: UInt32(kVK_Space), modifiers: UInt32(cmdKey))
+    let cmdGrave = CarbonHotKey(keyCode: UInt32(kVK_ANSI_Grave), modifiers: UInt32(cmdKey))
+    let cmdTab = CarbonHotKey(keyCode: UInt32(kVK_Tab), modifiers: UInt32(cmdKey))
+    check("system shortcuts: enabled entry kept with extra bits masked, disabled dropped", parsed == [cmdSpace], "\(parsed)")
+    check("system shortcuts: ⌘Space and ⌘Tab yes, ⌘` (disabled) and ⌥Tab no",
+          ShortcutSettings.isSystemShortcut(cmdSpace, in: parsed) && ShortcutSettings.isSystemShortcut(cmdTab, in: [])
+          && !ShortcutSettings.isSystemShortcut(cmdGrave, in: parsed) && !ShortcutSettings.isSystemShortcut(optTab, in: parsed))
+}
+do { // R5 Secure Input fallback skips a trigger macOS uses, and a reverse variant macOS uses
+    secureOn = true
+    let ctrlSpace = CarbonHotKey(keyCode: UInt32(kVK_Space), modifiers: UInt32(controlKey))
+    fakeSystemShortcuts = [ctrlSpace]
+    ShortcutSettings.shared.set(modifierFlags: .maskControl, keyCode: Int64(kVK_Space))
+    let reg = FakeRegistrar(); let (m, _) = secureManager(reg)
+    send(m, .flagsChanged, flagsEvent(.maskControl))
+    check("secure input on, ⌃Space is a macOS shortcut: never registers", reg.calls.isEmpty, "\(reg.calls)")
+    fakeSystemShortcuts = [optShiftTab]
+    ShortcutSettings.shared.set(modifierFlags: opt, keyCode: Int64(kVK_Tab))
+    send(m, .flagsChanged, flagsEvent(opt))
+    check("secure input on, ⌥⇧Tab is a macOS shortcut: only ⌥Tab registers", reg.active == [1: optTab], "\(reg.calls)")
+    fakeSystemShortcuts = []; secureOn = false
+    withExtendedLifetime(m) {}
 }
 print(failures == 0 ? "ALL HOTKEY TESTS PASSED" : "\(failures) HOTKEY TEST(S) FAILED")
 exit(failures == 0 ? 0 : 1)

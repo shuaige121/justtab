@@ -151,9 +151,10 @@ final class PreferencesMenu: NSObject, NSMenuDelegate {
 // MARK: - Shortcut Recorder
 
 /// A tiny window that records the next key combo the user presses and stores it
-/// as the trigger shortcut. Uses a local key monitor while the window is key, so
-/// it captures exactly what the keyboard emits — any Command/Ctrl/Option remap is
-/// handled automatically (whatever you actually press is what gets saved).
+/// as the trigger shortcut. The event tap hands the press over before macOS sees it, so
+/// system shortcuts (⌘Tab, ⌘Space, ⌘`) can be recorded too; a local key monitor covers
+/// the case where the tap is not running. Whatever you actually press is what gets saved,
+/// so Command/Ctrl/Option remaps are handled automatically.
 final class ShortcutRecorderWindowController: NSWindowController, NSWindowDelegate {
 
     private var keyMonitor: Any?
@@ -183,7 +184,7 @@ final class ShortcutRecorderWindowController: NSWindowController, NSWindowDelega
         currentLabel.translatesAutoresizingMaskIntoConstraints = false
         content.addSubview(currentLabel)
 
-        hintLabel.stringValue = "Hold your modifier and press a key (e.g. Tab)."
+        hintLabel.stringValue = Self.defaultHint
         hintLabel.font = NSFont.systemFont(ofSize: 11)
         hintLabel.textColor = .secondaryLabelColor
         hintLabel.alignment = .center
@@ -210,37 +211,52 @@ final class ShortcutRecorderWindowController: NSWindowController, NSWindowDelega
         currentLabel.stringValue = "Current: " + ShortcutSettings.shared.displayString
     }
 
+    private static let defaultHint = "Hold one or more of ⌃ ⌥ ⇧ ⌘ and press any key. Esc cancels."
+
     @objc private func toggleRecord() {
         if recording { stopRecording(); return }
         recording = true
         ShortcutSettings.shared.isRecording = true
+        ShortcutSettings.shared.recordHandler = { [weak self] modifiers, keyCode in
+            self?.capture(modifiers: modifiers, keyCode: keyCode)
+        }
         recordButton.title = "Press your shortcut…"
+        hintLabel.stringValue = Self.defaultHint
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-            self?.capture(event)
+            let mods = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+            var cg: CGEventFlags = []
+            if mods.contains(.control) { cg.insert(.maskControl) }
+            if mods.contains(.option) { cg.insert(.maskAlternate) }
+            if mods.contains(.shift) { cg.insert(.maskShift) }
+            if mods.contains(.command) { cg.insert(.maskCommand) }
+            self?.capture(modifiers: cg, keyCode: Int64(event.keyCode))
             return nil // swallow the keypress while recording
         }
     }
 
-    private func capture(_ event: NSEvent) {
-        let mods = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
-        var cg: CGEventFlags = []
-        if mods.contains(.control) { cg.insert(.maskControl) }
-        if mods.contains(.option) { cg.insert(.maskAlternate) }
-        if mods.contains(.shift) { cg.insert(.maskShift) }
-        if mods.contains(.command) { cg.insert(.maskCommand) }
-
-        guard !cg.isEmpty else {
+    private func capture(modifiers: CGEventFlags, keyCode: Int64) {
+        guard recording else { return }
+        switch ShortcutSettings.shared.record(modifiers: modifiers, keyCode: keyCode) {
+        case .needsModifier:
             recordButton.title = "Need a modifier — try again"
-            return
+        case .cancelled:
+            stopRecording()
+        case .recorded:
+            stopRecording()
+            refresh()
+            let settings = ShortcutSettings.shared
+            let key = CarbonHotKey(keyCode: UInt32(truncatingIfNeeded: settings.keyCode),
+                                   modifiers: SecureInputFallback.carbonModifiers(settings.modifierFlags))
+            if ShortcutSettings.isSystemShortcut(key, in: ShortcutSettings.systemShortcuts()) {
+                hintLabel.stringValue = "macOS also uses \(settings.displayString). JustTab takes it over while it runs."
+            }
         }
-        ShortcutSettings.shared.set(modifierFlags: cg, keyCode: Int64(event.keyCode))
-        stopRecording()
-        refresh()
     }
 
     private func stopRecording() {
         recording = false
         ShortcutSettings.shared.isRecording = false
+        ShortcutSettings.shared.recordHandler = nil
         if let m = keyMonitor {
             NSEvent.removeMonitor(m)
             keyMonitor = nil

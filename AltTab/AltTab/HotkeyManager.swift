@@ -53,10 +53,12 @@ final class HotkeyManager {
     /// The defaults are the real system; tests pass fakes.
     init(isSecureInputEnabled: @escaping () -> Bool = { IsSecureEventInputEnabled() },
          hotKeyRegistrar: HotKeyRegistrar = CarbonHotKeyRegistrar(),
-         secureInputPollInterval: TimeInterval = 1.0) {
+         secureInputPollInterval: TimeInterval = 1.0,
+         systemShortcuts: @escaping () -> Set<CarbonHotKey> = { ShortcutSettings.systemShortcuts() }) {
         secureInput = SecureInputFallback(isSecureInputEnabled: isSecureInputEnabled,
                                           registrar: hotKeyRegistrar,
-                                          pollInterval: secureInputPollInterval)
+                                          pollInterval: secureInputPollInterval,
+                                          systemShortcuts: systemShortcuts)
         secureInput.onPress = { [weak self] reverse in self?.handleFallbackPress(reverse: reverse) }
     }
 
@@ -204,9 +206,17 @@ final class HotkeyManager {
             return Unmanaged.passUnretained(event)
         }
 
-        // While recording a new shortcut, stay out of the way entirely.
+        // While recording, the next key press goes to the recorder and nowhere else. Taking it
+        // here, ahead of macOS, is what lets shortcuts the system reserves (⌘Tab, ⌘Space, ⌘`)
+        // be recorded at all.
         if ShortcutSettings.shared.isRecording {
-            return Unmanaged.passUnretained(event)
+            guard type == .keyDown, let record = ShortcutSettings.shared.recordHandler else {
+                return Unmanaged.passUnretained(event)
+            }
+            let modifiers = event.flags.intersection(ShortcutSettings.relevantMask)
+            let keyCode = event.getIntegerValueField(.keyboardEventKeycode)
+            DispatchQueue.main.async { record(modifiers, keyCode) }
+            return nil
         }
 
         switch type {
@@ -338,8 +348,9 @@ final class HotkeyManager {
 /// goes away soon after Secure Input ends even if no modifier is pressed. Nothing polls while
 /// idle; a check is one `IsSecureEventInputEnabled()` call (about 3 µs).
 ///
-/// Never for ⌘Tab or ⌘⇧Tab: a Carbon hotkey cannot suppress the native app switcher, so both
-/// would appear. Under Secure Input those users get the native switcher, as before.
+/// Never for a shortcut macOS also uses (⌘Tab, ⌘Space, ⌘`, anything enabled in System Settings →
+/// Keyboard Shortcuts): a Carbon hotkey cannot suppress the system's own action, so both would
+/// happen. Under Secure Input those users get the system's action, as before.
 final class SecureInputFallback {
     static let forwardID: UInt32 = 1
     static let reverseID: UInt32 = 2
@@ -353,16 +364,19 @@ final class SecureInputFallback {
     private let isSecureInputEnabled: () -> Bool
     private let registrar: HotKeyRegistrar
     private let pollInterval: TimeInterval
+    private let systemShortcuts: () -> Set<CarbonHotKey>
     private var registered: [UInt32: CarbonHotKey] = [:]
     private var pollTimer: Timer?
     private var lastTapTriggerNs: UInt64?
-    private var loggedNativeSwitcher = false
+    private var loggedSystemShortcut = false
     private var reportedFailures: Set<CarbonHotKey> = []
 
-    init(isSecureInputEnabled: @escaping () -> Bool, registrar: HotKeyRegistrar, pollInterval: TimeInterval) {
+    init(isSecureInputEnabled: @escaping () -> Bool, registrar: HotKeyRegistrar, pollInterval: TimeInterval,
+         systemShortcuts: @escaping () -> Set<CarbonHotKey>) {
         self.isSecureInputEnabled = isSecureInputEnabled
         self.registrar = registrar
         self.pollInterval = pollInterval
+        self.systemShortcuts = systemShortcuts
         registrar.onPress = { [weak self] id in self?.carbonPressed(id: id) }
     }
 
@@ -378,15 +392,19 @@ final class SecureInputFallback {
             apply([:], reason: "recording a shortcut")
         } else if !isSecureInputEnabled() {
             apply([:], reason: "secure input off")
-        } else if Self.isNativeSwitcher(settings.modifierFlags, keyCode: settings.keyCode) {
-            if !loggedNativeSwitcher {
-                loggedNativeSwitcher = true
-                justTabLog.info("secure input on: no Carbon fallback for \(settings.displayString, privacy: .public), it cannot suppress the native app switcher")
-            }
-            apply([:], reason: "trigger uses the native app switcher")
         } else {
-            apply(Self.hotKeys(for: settings.modifierFlags, keyCode: settings.keyCode),
-                  reason: settings.displayString)
+            let system = systemShortcuts()
+            let wanted = Self.hotKeys(for: settings.modifierFlags, keyCode: settings.keyCode)
+                .filter { !ShortcutSettings.isSystemShortcut($0.value, in: system) }
+            if wanted[Self.forwardID] == nil {
+                if !loggedSystemShortcut {
+                    loggedSystemShortcut = true
+                    justTabLog.info("secure input on: no Carbon fallback for \(settings.displayString, privacy: .public), macOS also uses this shortcut")
+                }
+                apply([:], reason: "macOS also uses the trigger")
+            } else {
+                apply(wanted, reason: settings.displayString)
+            }
         }
     }
 
@@ -438,11 +456,6 @@ final class SecureInputFallback {
             pollTimer = timer
         }
         justTabLog.info("secure input on: Carbon fallback registered for \(reason, privacy: .public) (\(self.registered.count, privacy: .public) hotkeys)")
-    }
-
-    /// ⌘Tab and ⌘⇧Tab belong to the native app switcher.
-    static func isNativeSwitcher(_ modifiers: CGEventFlags, keyCode: Int64) -> Bool {
-        keyCode == Int64(kVK_Tab) && modifiers.contains(.maskCommand)
     }
 
     /// The trigger, plus Shift+trigger (reverse) unless the trigger already includes Shift.
@@ -555,9 +568,10 @@ private func carbonHotKeyCallback(
 final class ShortcutSettings {
     static let shared = ShortcutSettings()
 
-    /// While true, HotkeyManager passes every event through untouched so the
-    /// recorder can capture keys without the switcher reacting. Not persisted.
+    /// While true, the switcher ignores the keyboard and the event tap hands the next key
+    /// press to `recordHandler` (modifiers, key code) on the main thread. Not persisted.
     var isRecording = false
+    var recordHandler: ((CGEventFlags, Int64) -> Void)?
 
     private let defaults = UserDefaults.standard
     private let modsKey = "JustTab.triggerModifierFlags"
@@ -590,24 +604,98 @@ final class ShortcutSettings {
         self.keyCode = keyCode
     }
 
+    enum RecordResult { case recorded, cancelled, needsModifier }
+
+    /// Any key with at least one modifier becomes the trigger. A modifier is required because
+    /// releasing it is what confirms the switch. Esc on its own cancels recording.
+    func record(modifiers: CGEventFlags, keyCode: Int64) -> RecordResult {
+        let modifiers = modifiers.intersection(Self.relevantMask)
+        if modifiers.isEmpty { return keyCode == Int64(kVK_Escape) ? .cancelled : .needsModifier }
+        set(modifierFlags: modifiers, keyCode: keyCode)
+        return .recorded
+    }
+
     /// Human-readable like "⌥Tab" for the menu / recorder UI.
-    var displayString: String {
+    var displayString: String { Self.display(modifierFlags, keyCode: keyCode) }
+
+    static func display(_ m: CGEventFlags, keyCode: Int64) -> String {
         var s = ""
-        let m = modifierFlags
         if m.contains(.maskControl) { s += "⌃" }
         if m.contains(.maskAlternate) { s += "⌥" }
         if m.contains(.maskShift) { s += "⇧" }
         if m.contains(.maskCommand) { s += "⌘" }
-        return s + Self.keyName(keyCode)
+        return s + keyName(keyCode)
     }
 
+    /// Fixed names for keys that type nothing; other keys show what they type on the current
+    /// keyboard layout ("A", "`", "ß"). Main thread (Text Input Sources).
     static func keyName(_ code: Int64) -> String {
-        switch Int(code) {
-        case kVK_Tab: return "Tab"
-        case kVK_Space: return "Space"
-        case kVK_ANSI_Grave: return "`"
-        case kVK_Escape: return "Esc"
-        default: return "key#\(code)"
+        if let name = specialKeyNames[Int(code)] { return name }
+        return typedCharacter(UInt16(truncatingIfNeeded: code))?.uppercased() ?? "Key \(code)"
+    }
+
+    private static let specialKeyNames: [Int: String] = {
+        var names: [Int: String] = [
+            kVK_Tab: "Tab", kVK_Space: "Space", kVK_Return: "↩", kVK_ANSI_KeypadEnter: "⌤",
+            kVK_Escape: "Esc", kVK_Delete: "⌫", kVK_ForwardDelete: "⌦", kVK_Help: "Help",
+            kVK_LeftArrow: "←", kVK_RightArrow: "→", kVK_UpArrow: "↑", kVK_DownArrow: "↓",
+            kVK_Home: "Home", kVK_End: "End", kVK_PageUp: "Page Up", kVK_PageDown: "Page Down",
+        ]
+        let fKeys = [kVK_F1, kVK_F2, kVK_F3, kVK_F4, kVK_F5, kVK_F6, kVK_F7, kVK_F8, kVK_F9, kVK_F10,
+                     kVK_F11, kVK_F12, kVK_F13, kVK_F14, kVK_F15, kVK_F16, kVK_F17, kVK_F18, kVK_F19, kVK_F20]
+        for (i, code) in fKeys.enumerated() { names[code] = "F\(i + 1)" }
+        return names
+    }()
+
+    private static func typedCharacter(_ code: UInt16) -> String? {
+        guard let source = TISCopyCurrentKeyboardLayoutInputSource()?.takeRetainedValue(),
+              let raw = TISGetInputSourceProperty(source, kTISPropertyUnicodeKeyLayoutData) else { return nil }
+        let data = Unmanaged<CFData>.fromOpaque(raw).takeUnretainedValue() as Data
+        var deadKeys: UInt32 = 0
+        var length = 0
+        var chars = [UniChar](repeating: 0, count: 4)
+        let status = data.withUnsafeBytes { bytes -> OSStatus in
+            guard let layout = bytes.bindMemory(to: UCKeyboardLayout.self).baseAddress else { return -1 }
+            return UCKeyTranslate(layout, code, UInt16(kUCKeyActionDisplay), 0, UInt32(LMGetKbdType()),
+                                  OptionBits(kUCKeyTranslateNoDeadKeysBit), &deadKeys, chars.count, &length, &chars)
         }
+        let text = String(utf16CodeUnits: chars, count: length)
+        guard status == noErr, !text.isEmpty,
+              text.unicodeScalars.allSatisfy({ !CharacterSet.controlCharacters.union(.whitespaces).contains($0) })
+        else { return nil }
+        return text
+    }
+
+    // MARK: Shortcuts macOS uses
+
+    /// True when macOS also acts on this key combination: ⌘Tab / ⌘⇧Tab (the app switcher) or
+    /// any shortcut enabled in System Settings → Keyboard → Keyboard Shortcuts.
+    static func isSystemShortcut(_ key: CarbonHotKey, in system: Set<CarbonHotKey>) -> Bool {
+        let commandTab = key.keyCode == UInt32(kVK_Tab) && key.modifiers & UInt32(cmdKey) != 0
+        return commandTab || system.contains(key)
+    }
+
+    private static var systemShortcutCache: (at: UInt64, keys: Set<CarbonHotKey>)?
+
+    /// The enabled system shortcuts. `CopySymbolicHotKeys` takes ~6 ms, so the list is kept for
+    /// a minute. Main thread.
+    static func systemShortcuts() -> Set<CarbonHotKey> {
+        let now = DispatchTime.now().uptimeNanoseconds
+        if let cached = systemShortcutCache, now &- cached.at < 60_000_000_000 { return cached.keys }
+        var ref: Unmanaged<CFArray>?
+        let list = CopySymbolicHotKeys(&ref) == noErr ? ref?.takeRetainedValue() as? [[String: Any]] : nil
+        let keys = parseSymbolicHotKeys(list ?? [])
+        systemShortcutCache = (now, keys)
+        return keys
+    }
+
+    static func parseSymbolicHotKeys(_ list: [[String: Any]]) -> Set<CarbonHotKey> {
+        let mask = UInt32(cmdKey | shiftKey | optionKey | controlKey)
+        return Set(list.compactMap { entry in
+            guard entry[kHISymbolicHotKeyEnabled as String] as? Bool == true,
+                  let code = entry[kHISymbolicHotKeyCode as String] as? Int,
+                  let modifiers = entry[kHISymbolicHotKeyModifiers as String] as? Int else { return nil }
+            return CarbonHotKey(keyCode: UInt32(truncatingIfNeeded: code), modifiers: UInt32(truncatingIfNeeded: modifiers) & mask)
+        })
     }
 }

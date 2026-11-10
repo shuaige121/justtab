@@ -26,7 +26,7 @@ It's built for people who just want the classic Alt-Tab window switcher — noth
 ### Features
 
 - 🪟 **Per-window switching** with **live thumbnails** (not just app icons)
-- ⌨️ **One configurable setting** — record any trigger shortcut you like (menu bar → *Change Shortcut…*)
+- ⌨️ **One configurable setting** — record any trigger shortcut you like: any key plus one or more of ⌃ ⌥ ⇧ ⌘, including ones macOS uses such as ⌘Tab (menu bar → *Change Shortcut…*)
 - 🧱 **Grid layout** — every window stays on screen, nothing scrolls off
 - 🆓 **Free forever, MIT-licensed, open source** — no Pro tier, ever
 - 🔒 **No network, no telemetry** — it never phones home
@@ -63,7 +63,7 @@ Requires full Xcode (not just the Command Line Tools).
 | Click a thumbnail | Switch to that window |
 | Hold **⌥** + **⇧ Shift** + **Tab** | Open with the last window selected |
 
-To use a different trigger, open the menu bar icon → **Change Shortcut…** and press the keys you want.
+To use a different trigger, open the menu bar icon → **Change Shortcut…** and press the keys you want. Any key works with at least one modifier (the switch happens when you release it), including shortcuts macOS uses, such as ⌘Tab or ⌘`; JustTab takes those over while it runs.
 
 ### Credits
 
@@ -84,7 +84,7 @@ JustTab is a stripped-down fork of [**alttab-macos** by Sergio Farfan](https://g
 ### 特性
 
 - 🪟 **逐窗口切换** + **实时缩略图**(不是只有 App 图标)
-- ⌨️ **唯一一个设置** —— 自定义触发快捷键(菜单栏 → *Change Shortcut…*,按什么键存什么)
+- ⌨️ **唯一一个设置** —— 自定义触发快捷键:任意按键加一个或多个 ⌃ ⌥ ⇧ ⌘,包括 ⌘Tab 这类系统快捷键(菜单栏 → *Change Shortcut…*,按什么键存什么)
 - 🧱 **网格布局** —— 所有窗口都在屏幕内,不会跑出去
 - 🆓 **永久免费、MIT 协议、开源** —— 永远不会有 Pro 版
 - 🔒 **不联网、无遥测** —— 绝不回传任何数据
