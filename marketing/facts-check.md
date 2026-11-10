@@ -1,92 +1,69 @@
-# Facts check
+# Facts check and public-claim map
 
-Fact IDs F1-F17 are from the allowed list. O1 = the owner's brief: on Windows, Alt-Tab means hold Alt, tap Tab, see every window, release to switch; on macOS Cmd-Tab switches apps, not windows; JustTab restores the Windows-style behavior with the default shortcut on the same keys.
+Authority: the owner's supplied fact list for this round, F1–F20 and P1–P5. There is no F14 in the current list. The old F13 installation bundle and retired F14 window-scope claim must not be reused. This is a copy audit against that brief, not independent app validation or web research.
 
-Files: P = positioning.md, R = readme-hero.md, L = launch-posts.md. The same claim appears in several places; it is listed once.
+Locations below cover `README.md` (R, English and Chinese), `site/index.html` (S) and `launch-posts.md` (L). L sections: G = GitHub description/topics; H = Show HN; M = r/macapps; P = Product Hunt; X1–X5 = individual X posts; V = V2EX; C = Xiaohongshu. Section names identify every reuse, including metadata, captions and translations. Editorial capture directions are not claims of completed work.
 
-F17 (added 2026-11-09, owner's decision): JustTab is free forever: no paywall, no Pro tier, no upsell.
+## Verified claim inventory
 
-## Claims made and their sources
+| ID | Allowed claim, including qualifications | Public-copy locations |
+| --- | --- | --- |
+| F1 | Product name is JustTab | R title, Chinese title, prose and credits; S title, metadata, wordmark, prose and footer; all L sections |
+| F2 | Switch individual windows, not just apps; one grid of live window thumbnails with windows from all apps | R pitch and What it does / 功能; S title, metadata, hero, Features; L G, H, M, P name/tagline/description/comment/gallery, X1, V, C |
+| F3 | Hold shortcut, Tab or arrow keys move, Shift+Tab goes back, release switches, Esc cancels, clicking a thumbnail switches | R Usage / 使用; S hero and three steps; L H, M, P description/comment/gallery, X2, V, C |
+| F4 | Option+Tab default; PC keyboard Alt acts as Option on a Mac, physically Alt+Tab | R What it does and Usage / 功能 and 使用; S hero, decorative key labels, first step; L G, H, M, P description/comment, X2, V, C |
+| F5 | Record any key plus one or more of Control, Option, Shift and Cmd through menu bar Change Shortcut…; Esc cancels recording | R Usage and Cmd-Tab FAQ in both languages; S Features and Cmd-Tab FAQ; L G configurable-shortcut phrase, H, M, P comment/gallery, X3, V |
+| F5 | Cmd+Tab replaces the built-in app switcher while JustTab runs | R Usage and Cmd-Tab FAQ in both languages; S Cmd-Tab FAQ; L H, M, P comment, X3, V |
+| F5 | One real setting, the shortcut, plus Launch at Login; menu-bar app with no Dock icon | R What it does and Usage / 功能 and 使用; S Features; L G menu-bar topic, H, M, P comment/gallery, X3, V, C |
+| F6 | Most recently used first; opens with previous window selected; quick press and release toggles the two most recent windows | R What it does and Usage / 功能 and 使用; S first step and Features; L H, M, P comment, X2 toggle sentence, V, C |
+| F7 | Minimized windows included and dimmed | R What it does / 功能; S Features; L H, M, P comment/gallery, X5, V, C |
+| F8 | Grid cells shrink so every listed window fits on screen | R What it does / 功能; S Features; L M, X5, V |
+| F9 | Free, MIT-licensed, open source | R badge, What it does and License / 功能 and 许可; S top strip, Privacy, footer; L G description/topics, H title/comment, M title/post, P tagline/description/comment, X1, V, C |
+| F9 | Full credit: stripped-down fork of alttab-macos by Sergio Farfan (MIT), itself inspired by AltTab by lwouis | R Credits / 致谢; S footer; L H, M, P comment, X5, V, C. G's brief metadata is paired with the repository README; P metadata is paired with its credited first comment. |
+| F10 | App contains no networking code; no telemetry, account or update checks | R Permissions and privacy and phone-home FAQ in both languages; S Privacy and phone-home FAQ; L G no-networking phrase, H, M, P comment, X1, V, C |
+| F11 | Pure Swift + AppKit, zero third-party dependencies, about 2,600 Swift lines, about 520 KB on disk | R What it does / 功能; S Features; L G language/framework topics, H, V |
+| F12 | macOS 13+; Accessibility required; live thumbnails need macOS 14+ and Screen Recording permission, otherwise app icons | R platform badge, Install, Permissions / 安装, 权限; S metadata strip, hero note, Privacy; L G minimum versions and thumbnail permission, H, M, P description/comment/gallery, X4, V, C |
+| F13 | Only install today is source build with full Xcode: clone repository, cd justtab, ./build.sh install; installs to ~/Applications | R Install / 安装; S metadata, hero install link and App Store FAQ; L G, H, M, P description/comment, X4 linked instructions, V, C |
+| F15 | macOS Cmd-Tab switches apps; Cmd-` cycles windows of the current app only | R What it does / 功能; S Cmd-Tab FAQ; L H, V |
+| F16 | Repository URL is github.com/shuaige121/justtab | R clone commands; S GitHub CTA and README anchor links; L clone commands and repository links in H, M, P, X4, X5, V, C |
+| F16 | Repository is private; owner must make it public before posting | Editorial preconditions in every L section only; excluded from all fenced public copy, R and S |
+| F17 | Free forever; no paywall, Pro tier or upsell; nothing in app will ever be sold | R What it does and License / 功能 and 许可; S top strip, Privacy, footer; L G free-forever phrase, H, M, P tagline/comment, X1 (except final sale clause), V, C |
+| F18 | About 34 ms key press to switcher; about 55 ms key press to first live thumbnail, measured on developer's Mac with 22 windows open, November 2026, median of real Cmd+Tab use; about 25 MB memory | L H first comment only. Measurement conditions appear in the same sentence as both latency numbers; memory is separately qualified as approximate. |
+| F19 | Not on Mac App Store: sandbox required, preventing Accessibility API access to list/focus other apps' windows; this kind of switcher is distributed directly. Apple Developer Technical Support, Apple Developer Forums, 2024 and 2025 | R App Store FAQ in both languages; S App Store FAQ |
+| F20 | Exactly one private macOS function, _AXUIElementGetWindow, matches an accessibility window to its window ID | R private-function FAQ in both languages; S private-function FAQ; L H first comment only |
 
-| # | Claim text (as used in copy) | Fact ID(s) | Where |
-|---|---|---|---|
-| 1 | Product is called JustTab; tagline "Just Tab. Nothing else." | F1 | R, P |
-| 2 | Switches between individual windows, not just apps | F2 | P, R, L |
-| 3 | Shows a grid of live window thumbnails | F2 | P, R, L |
-| 4 | Hold the shortcut, tap Tab (or arrow keys) to move, release to switch | F3 | P, R, L |
-| 5 | Shift+Tab goes back; Esc cancels; clicking a thumbnail switches | F3 | L |
-| 6 | Holding Shift when opening starts on the last window | F3 | (not used in new copy; README usage table unchanged) |
-| 7 | Default shortcut is Option+Tab | F4 | P, R, L |
-| 8 | On a PC keyboard used with a Mac, Alt acts as Option, so physically Alt+Tab | F4 | P, R, L |
-| 9 | Shortcut can be changed to any modifier + key combination, including Cmd+Tab, which then replaces the built-in switcher | F4 | P, R, L |
-| 10 | Shortcut is the only real setting; plus Launch at Login toggle | F5 | P, R, L |
-| 11 | Lives in the menu bar; no Dock icon | F5 | R, L |
-| 12 | Windows ordered most recently used first | F6 | P, R, L |
-| 13 | Opens with previous window selected; quick press and release toggles between two most recent windows | F6 | P, R, L |
-| 14 | Minimized windows are included (app icon, dimmed) | F7 | R, L |
-| 15 | Grid shrinks cells so every window fits on screen | F8 | R, L |
-| 16 | Free, MIT-licensed, open source | F9 | P, R, L |
-| 17 | Stripped-down fork of alttab-macos by Sergio Farfan (MIT), inspired by AltTab by lwouis (credit repeated in every file/post) | F9 | P, R, L |
-| 18 | No networking code: no telemetry, no account, no update checks | F10 | P, R, L |
-| 19 | Pure Swift + AppKit, zero third-party dependencies | F11 | P, R, L |
-| 20 | About 316 KB | F11 | P, R, L |
-| 21 | Requires macOS 13 or later | F12 | P, R, L |
-| 22 | Accessibility permission is required | F12 | P, L |
-| 23 | Live thumbnails need macOS 14+ and Screen Recording permission; otherwise app icons | F12 | P, L, R (notes) |
-| 24 | Install by building from source with full Xcode: `git clone https://github.com/shuaige121/justtab.git`, `./build.sh install` | F13 | P, R, L |
-| 25 | No prebuilt download, notarized build, App Store or Homebrew listing | F13 | P, R, L |
-| 26 | Only windows on the current Space are listed, plus minimized windows; other Spaces not shown | F14 | P, R, L |
-| 27 | Cmd-Tab switches apps, not windows | F15, O1 | P, R, L |
-| 28 | Cmd-` cycles windows of the current app only | F15 | P, L |
-| 29 | On Windows: hold Alt, tap Tab, see every window, release to switch | O1 | P, R, L |
-| 30 | JustTab gives the Windows-style behavior back; default shortcut on the same keys | O1, F4 | P, R, L |
-| 31 | Repository is github.com/shuaige121/justtab | F16 | P, R, L |
-| 32 | Repository is currently private; owner decides when it goes public (internal note only, not in public copy) | F16 | P, L (preconditions) |
-| 33 | Windows listed from all apps in one grid (contrast with Cmd-`) | F2, F15 | P |
-| 34 | Taglines "Alt-Tab window switching for macOS" / "Alt-Tab style window switching for macOS" are descriptive of the behavior | O1, F2, F3 | R, L |
-| 35 | Xiaohongshu title length 12 characters (<=20); Product Hunt tagline 40 characters (<=60); GitHub description well under 350 | (format limits in brief) | L |
-| 36 | "Windows-style Alt-Tab for Mac" / "像 Windows 一样 Alt+Tab 切换窗口" (descriptive phrase, generic keyboard term, no product name) | O1, F2, F3, F4 | R, L |
-| 37 | "Switch windows, not just apps" / "切换窗口，而不只是切换 App" | F2, F15 | R, L |
-| 38 | "Free forever; no paywall, no Pro tier, no upsell" now in first lines of README, GitHub description, HN comment, Reddit, Product Hunt, V2EX, Xiaohongshu | F17 | R, L |
-| 39 | "Nothing in the app will ever be sold" / "不会在应用内收费、销售任何功能" | F17 | R, L |
-| 40 | "One job, one real setting (the shortcut)" / "只做一件事，只有一个真正的设置" ("one job" = switching windows; positive focus statement, no other product named) | F2, F5, F17 (owner stance 5a) | R, L |
-| 41 | "A free, open-source window switcher for macOS that works like Alt-Tab on Windows" | F9, F17, O1 | R |
-| 42 | GitHub description (271 characters, limit 350): Option+Tab, Alt+Tab on a PC keyboard, live thumbnails, build from source, macOS 13+, fork of alttab-macos | F2, F3, F4, F9, F10, F12, F13, F17 | L |
-| 43 | GitHub topics `windows-style`, `switch-windows` (labels, not claims) | F2, O1 | L |
-| 44 | Show HN title "Windows-style Alt-Tab for Mac (switch windows, not apps)" (74 characters, limit 80) | O1, F2 | L |
-| 45 | Product Hunt tagline "Windows-style Alt-Tab for Mac: switch windows, not apps" (55 characters, limit 60) | O1, F2 | L |
-| 46 | Xiaohongshu title "Mac 上用 Alt+Tab 切窗口" (18 characters, limit 20); Alt+Tab is the physical key combination on a PC keyboard, Option+Tab otherwise | F4 | L |
-| 47 | V2EX title and tags (Mac, macOS, 窗口切换, 效率工具, 开源) | O1, F2, F9 | L |
-| 48 | Hashtags #Mac切换窗口 #Mac窗口切换 (labels) | F2 | L |
+## Pending claim inventory
 
-Judgment notes:
-- "Alt-Tab style" is shorthand for claim 29 plus claims 2-4.
-- Hashtags and GitHub topics are labels, not factual claims.
-- In the Windows description, "see every window" is quoted from the owner's brief (O1) for Windows. For JustTab we say "every window" never; we say the grid fits all listed windows (F8) and state F14.
+Each public line or complete HTML element below carries its P tag. In fenced plain-text posts the tag is `[P1]` style; outside fences and in HTML it is an HTML comment. Combined tags mean the whole line depends on both facts. Deleting every tagged line leaves complete factual copy, intact Markdown fences and valid HTML.
 
-## Claims I wanted to make but could not support (excluded from the copy)
+| ID | Optional claim | Public-copy locations |
+| --- | --- | --- |
+| P1 | Cmd-H-hidden apps' windows are listed; choosing one brings the app back | R bilingual optional FAQ; S Features and combined optional FAQ element; L H, M, V optional lines | <!-- P1 -->
+| P2 | Windows on other desktops (Spaces) are listed; choosing one switches desktops | R bilingual optional FAQ; S Features and combined optional FAQ element; L H, M, V optional lines | <!-- P2 -->
+| P3 | Planned Developer ID-signed DMG, notarized by Apple, from GitHub Releases; not available yet | R bilingual Install and App Store FAQ; S disabled Download button, hero note and App Store FAQ note. No launch post links a download. | <!-- P3 -->
+| P4 | Opens on display with mouse pointer | S Features; L H optional line | <!-- P4 -->
+| P5 | After switching, checks chosen window came to front and retries once if needed | S Features; L H optional line | <!-- P5 -->
 
-- ~~"Free forever" / "no Pro tier" / "no paywall, no upsell"~~ now supported by F17 (owner's commitment, 2026-11-09) and used in the copy.
-- "No settings maze" / "just works" / "sensible defaults" (current README). Subjective; replaced by F5.
-- "Fast", "lightweight on CPU/memory", "instant", any speed or resource number other than 316 KB.
-- "Works on Apple Silicon / Intel / specific Mac models", "tested on macOS 13 / 14 / 15 / 26". Only the minimum versions in F12 are known.
-- "Works with multiple monitors" (source may handle it, but not in the fact list).
-- "Includes all apps' windows including full-screen windows / hidden apps / windows of apps without a normal window." Not in the fact list.
-- "Supports Mission Control / Stage Manager / Spaces switching."
-- "Keyboard layout / non-US layout support", "localized UI".
-- "Uses X API (ScreenCaptureKit, Accessibility API) under the hood." Read in source; not in the fact list.
-- "Open the app at login works reliably", "sandboxed", "signed", "hardened runtime".
-- Anything about user counts, stars, downloads, testimonials, ratings, awards, release dates, version numbers, prices, roadmap (none given).
-- "Replaces / better than / lighter than" any other switcher (no competitor claims allowed).
-- "Pressing the Alt key on Windows keyboards 'is' Option on all Mac setups". F4 says Alt acts as Option on a PC keyboard used with a Mac; we do not claim anything about remapping settings.
+F19's planned distribution sentence depends on P3 and is split out of every otherwise verified FAQ answer. The core install path stays F13. <!-- P3 -->
 
-## Gaps (items missing, lines left out)
+## Completeness and interpretation
 
-1. **No JustTab screenshot or GIF.** The only image, `Screenshots/AltTab1.jpg`, belongs to upstream and must not be shown as JustTab. All posts are text-only; Show HN, Reddit, Product Hunt and especially Xiaohongshu would benefit from a recording of the real app.
-2. **Repository is private (F16).** All drafts link to it; they cannot be posted until the owner makes it public.
-3. **No prebuilt download (F13).** Install is build-from-source with full Xcode, which limits the realistic audience (Windows switchers who are not developers) and makes Product Hunt a weak fit for now.
-4. **Product Hunt needs a website/link and gallery image.** Not available; not invented.
-5. **No release/version information**, so no "v1.0" or "latest release" lines.
-6. **No author/maker byline or contact** was provided; posts speak neutrally ("Feedback is welcome") without a name or email.
-7. ~~Free-forever promise~~ decided: keep it (F17).
-8. **Language of the README tagline** in Chinese was reworded; confirm the owner is happy dropping the bilingual tagline line.
+- English and Chinese README sections contain the same factual set, including the full usage table, private-function FAQ, license and credit. English badges summarize F9/F12 and apply to the whole document.
+- R pitch: F1/F2. R What it does: F2/F4–F9/F11/F15/F17. R Install: F12/F13. R Usage: F3/F5/F6. R Permissions: F10/F12. R verified FAQ: F5/F10/F19/F20. R Credits/License: F9/F17. The optional FAQ and install lines are separately mapped above.
+- S metadata/hero: F1–F4/F9/F12/F13/F17; steps: F3/F4/F6; verified Features: F2/F5–F8/F11; Privacy: F9/F10/F12/F17; verified FAQ: F5/F10/F15/F19/F20; footer: F9/F17. The illustration uses neutral blocks only and makes no screenshot or app-content claim.
+- G description/topics: F1/F2/F4/F5/F9–F13/F17. H title: F1/F2/F9; comment: F1–F7/F9–F13/F15–F18/F20, plus tagged optional facts. M title: F1/F2/F9/F17; post: F1–F10/F12/F13/F16/F17, plus tagged optional facts.
+- P name: F1; tagline: F2/F17; description: F2–F4/F9/F12/F13; comment: F1–F7/F9/F10/F12/F13/F16/F17. Gallery directions map to F2/F3/F5/F7/F12 and require actual capture.
+- X1: F1/F2/F9/F10/F17. X2: F3/F4/F6. X3: F5. X4: F12/F13/F16. X5: F7–F9/F16. Publish the whole thread, retaining requirements and credit.
+- V title: F1/F2/F9/F17; body: F1–F13/F15–F17, plus tagged optional facts. C title: F2; body: F1–F7/F9/F10/F12/F13/F16/F17. Topic labels describe those facts, not popularity or outcomes.
+- “Cmd” in copy is the brief's requested display name for the Command modifier. “One job” is switching windows (F2); “one real setting” always keeps the separate Launch at Login qualification (F5).
+- No performance number or hardware compatibility claim is inferred from the source. No claim has been promoted from pending to verified in this round.
+- All constrained lengths are computed by `check-copy.py`, not claims about the app. The file checks the printed counts and limits, including the X URL-length convention as an extra check.
+
+## Wanted but unsupported
+
+- Exact Apple Developer Forums URLs for F19. The brief supplies the attribution and years but no URLs; no network was used and no links were invented.
+- CPU usage, launch time, battery effect, “instant” switching, cross-machine speed guarantees, or memory figures beyond the supplied approximate F18 value.
+- Hardware architecture/model compatibility, tested macOS versions, full-screen-window behavior, localization and keyboard-layout guarantees.
+- Package-manager availability, automatic updating, release versions/dates, release schedules, maker name or contact.
+- User counts, stars, testimonials, ratings, awards, popularity claims and comparisons with other products.
+- Real screenshots, recordings and gallery assets. These are not fabricated; `capture-plan.md` specifies the work still needed.

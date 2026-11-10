@@ -1,60 +1,47 @@
 # JustTab positioning (internal)
 
-Source of truth for claims: `facts-check.md`. Fact IDs (F1-F16) are cited in brackets. O1 is the owner's brief (the Windows Alt-Tab behavior description and the core angle).
+The supplied F1–F20 and P1–P5 brief is the only authority for public claims. F14 is retired; it has no replacement verified claim. See `facts-check.md` for the claim inventory and public-copy locations. Do not publish this planning document as a post.
 
-## 1. Target audience
+## Audience and message
 
-**Primary: people who recently moved from Windows to a Mac.** They have years of Alt-Tab habit: hold Alt, tap Tab, see every window, release to switch [O1]. On macOS, Cmd-Tab switches between apps, not windows [F15], so the habit stops working.
+Primary audience: people who came to the Mac from Windows and miss choosing individual windows with Alt-Tab. Secondary audience: people who keep several windows of one app open. These are audience choices from the brief, not claims about current users.
 
-Secondary audiences (each justified only by the facts we hold):
+Public pitch: **Switch between individual windows on macOS in one thumbnail grid.** (F1, F2)
 
-- **People who keep a PC keyboard on a Mac.** The Alt key acts as Option, so the default shortcut is physically Alt+Tab [F4]. This is the clearest match for the angle.
-- **Users who keep several windows of one app open** (browser, editor, terminal). Cmd-Tab shows one entry per app and Cmd-` cycles only the current app's windows [F15]; JustTab lists individual windows from all apps in one grid [F2].
-- **Users who prefer small, auditable, open-source utilities.** MIT, no networking code, zero third-party dependencies, source on GitHub [F9, F10, F11, F16]. Because install is build-from-source [F13], this group is also the realistic early audience.
+The explanation is concrete: macOS Cmd-Tab switches apps; Cmd-` cycles only the current app's windows (F15). JustTab gathers windows from all apps into one grid (F2). Option+Tab is the default; on a PC keyboard connected to a Mac, Alt acts as Option (F4).
 
-Not a target today: anyone who needs a download button, a notarized build, or Homebrew [F13].
+## Message order
 
-## 2. The core problem, in their words
+1. Individual windows in one grid, most recently used first; quick press and release toggles between the two most recent windows (F2, F6).
+2. Hold, choose, release; Tab, arrow keys, Shift+Tab, Esc and clicking are the available actions described in this round (F3).
+3. Free forever, MIT-licensed and open source. No paywall, Pro tier or upsell; nothing in the app will ever be sold (F9, F17).
+4. One job, switching windows; one real setting, the shortcut, plus Launch at Login. Menu bar, no Dock icon (F2, F5). State this positively.
+5. Build from source with full Xcode today, macOS 13+, Accessibility required; live thumbnails require macOS 14+ and Screen Recording permission, otherwise app icons (F12, F13).
 
-- "I press Alt-Tab out of habit and the wrong thing happens."
-- "Cmd-Tab only shows apps. I have four browser windows and cannot pick one."
-- "I want to see the windows, then let go to switch."
+## Supporting detail
 
-## 3. One-sentence positioning
+- Minimized windows are included and dimmed; the grid shrinks cells so every listed window fits (F7, F8).
+- Any key plus one or more of Control, Option, Shift and Cmd can be recorded through Change Shortcut…; Esc cancels recording. Cmd+Tab replaces the built-in app switcher while JustTab runs (F5).
+- No networking code, telemetry, account or update checks (F10).
+- Pure Swift + AppKit, zero third-party dependencies, about 2,600 lines of Swift and about 520 KB on disk (F11).
+- Technical audience only: on the developer's Mac with 22 windows open in November 2026, median real Cmd+Tab use measured about 34 ms to show the switcher and about 55 ms to show the first live thumbnail, both from key press. Memory use is about 25 MB (F18). Do not shorten this into an unqualified speed promise.
+- App Store sandboxing prevents use of the Accessibility API to list or focus other apps' windows; direct distribution is the approach for this kind of switcher (F19). Cite the supplied Apple Developer Technical Support / Apple Developer Forums attribution, 2024 and 2025, without inventing forum URLs.
+- Technical FAQ and HN comment: exactly one private function, `_AXUIElementGetWindow`, matches an accessibility window to its window ID (F20).
 
-JustTab brings Windows-style Alt-Tab window switching to the Mac: hold the shortcut, see a grid of live window thumbnails, release to switch, with the default shortcut on the same keys (Alt+Tab on a PC keyboard) [O1, F2, F3, F4].
+## Pending claims and publishing gate
 
-## 4. Three key messages
+- Apps hidden with Cmd-H are listed and return when a window is chosen; confirm on a real Mac before retaining the optional copy (P1). <!-- P1 -->
+- Windows on other desktops (Spaces) are listed and choosing one switches desktops; confirm on a real Mac (P2). <!-- P2 -->
+- A Developer ID-signed, Apple-notarized DMG from GitHub Releases is planned, not available today; the site button remains disabled (P3). <!-- P3 -->
+- The switcher opens on the display with the mouse pointer; confirm with two displays (P4). <!-- P4 -->
+- The focus check after switching retries once if needed; confirm on a real Mac (P5). <!-- P5 -->
 
-1. **It switches windows, not just apps.** A grid of live window thumbnails, most recently used first; a quick press and release toggles between your two most recent windows [F2, F6]. (Thumbnails need macOS 14+ and Screen Recording permission; otherwise app icons are shown [F12].)
-2. **The keys you already know.** Hold, tap Tab, release. Default is Option+Tab, which is the Alt key on a PC keyboard. It can be changed to any modifier + key combination, including Cmd+Tab [F3, F4].
-3. **Small, free and private by construction.** Free, MIT, open source; no networking code, so no telemetry, account or update checks; about 316 KB; Swift + AppKit with no third-party dependencies [F9, F10, F11].
+The repository is private. The owner must make it public before any launch post is published (F16). This is an editorial precondition, never part of public copy. Source installation is the complete install path in every draft (F13). Optional lines must be removable without breaking that path.
 
-## 5. Objections and honest answers
+## Attribution and register
 
-| Objection | Answer |
-|---|---|
-| "Where is the download?" | There is none today. Install means building from source with full Xcode: clone the repository, run `./build.sh install`. No prebuilt, notarized, App Store or Homebrew version exists [F13]. |
-| "Can I see windows on my other desktops?" | No. Only windows on the current Space are listed, plus minimized windows [F14]. |
-| "macOS already has Cmd-Tab and Cmd-`." | Cmd-Tab switches apps and Cmd-` cycles windows of the current app only [F15]. JustTab shows windows from all apps in one grid [F2]. |
-| "I don't want to give permissions." | Accessibility permission is required. Screen Recording is needed only for live thumbnails, which also need macOS 14+; without it, app icons are shown [F12]. |
-| "What does it need?" | macOS 13 or later [F12]. |
-| "Is it a new project?" | It is a stripped-down fork of alttab-macos by Sergio Farfan (MIT), itself inspired by AltTab by lwouis. State this wherever the README text appears [F9]. |
-| "Does it phone home?" | It contains no networking code [F10]. |
-| "Can I configure it?" | The shortcut is the only real setting, plus a Launch at Login toggle [F5]. We present this as a plain fact, not a selling point about "simplicity" beyond that. |
-| "Can I look at the code?" | The repository is github.com/shuaige121/justtab. It is currently private; the owner decides when to make it public [F16]. No post should go out before that. |
+Every README-style text keeps this credit (F9): JustTab is a stripped-down fork of alttab-macos by Sergio Farfan (MIT), itself inspired by AltTab by lwouis.
 
-## 5a. Owner's stance (internal, 2026-11-09)
+English first. Chinese is written natively in a plain, restrained register. Use short sentences, no hype or unsupported comparisons. Do not put other product names into headlines, topics or body copy beyond the required attribution and the names required by the allowed facts. Keep key names consistent. Use “listed windows” when describing the grid fitting on screen.
 
-- JustTab is free forever and open source. It will never charge for anything or sell features inside the app (F17).
-- The owner considers feature-heavy switchers to have drifted away from the core job. JustTab's answer is focus: one job, one setting. Say this positively ("does one thing"); never name or criticize another product in public copy.
-
-## 6. Tone
-
-- Professional, restrained, factual. Short sentences. State what it does and what it does not do.
-- Lead with the limitation-aware install note; do not bury it.
-- No superlatives, hype words, exclamation marks, slang or memes. No comparisons with other products.
-- Credit upstream plainly and every time the README text is reused [F9].
-- Chinese copy is written natively in the same register (plain, 克制), not translated word for word.
-- Keep key names as written: Option, Cmd, Tab, Alt.
-- Do not show the upstream `Screenshots/AltTab1.jpg` as JustTab. No visual exists yet (see gaps).
+The canonical copy is now `README.md`, `site/index.html` and `launch-posts.md`. `readme-hero.md` points to that copy; `keyword-strategy.md` records phrase choices only.

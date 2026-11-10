@@ -1,202 +1,268 @@
-# Launch post drafts (nothing has been posted)
+# Launch post drafts
 
-Preconditions before any of these go out (owner decisions, not copy):
+Internal publishing instructions: copy only the fenced post text. Counts, headings, preconditions and gallery directions are editorial notes. Nothing has been posted. Every section requires the repository to be public first (F16). Installation in these drafts is from source with full Xcode (F13).
 
-- The repository is private today [F16]. Every draft links to it, so it must be public first.
-- Every draft states the install path honestly: build from source with full Xcode, no prebuilt download [F13].
-- No screenshot or GIF exists for JustTab. Do not attach the upstream `AltTab1.jpg`.
-- Each post that reproduces README text must keep the credit to alttab-macos / AltTab [F9]. It is included in every draft below.
+Counts are Unicode code points, including spaces and punctuation, excluding fence markers and the final newline. X posts also fit when their one URL is counted as 23 characters. Recheck platform rules at posting time. Run `python3 marketing/check-copy.py` to verify the printed counts.
 
----
+## GitHub repository
 
-## 1. GitHub repository description (<=350 characters)
+Preconditions: the owner has made the repository public. Publish the README with its F9 credit before setting the description and topics.
 
+<!-- count: GitHub description; max: 350 -->
+```text
+JustTab switches individual windows on macOS in one thumbnail grid. Option+Tab by default, with a configurable shortcut. Free forever, open source (MIT), no networking code. Requires macOS 13+; live thumbnails need macOS 14+ and Screen Recording permission. Build from source with full Xcode.
 ```
-Windows-style Alt-Tab for Mac: switch windows, not just apps. Hold Option+Tab (Alt+Tab on a PC keyboard), see live window thumbnails, release to switch. Free forever, open source (MIT), no networking code. Build from source, macOS 13+. Stripped-down fork of alttab-macos.
+(292/350)
+
+**Topics**
+
+```text
+macos, window-switcher, swift, appkit, menu-bar-app, open-source, mit-license, keyboard-shortcuts
 ```
 
-Suggested topics:
-`macos`, `window-switcher`, `alt-tab`, `windows-style`, `switch-windows`, `swift`, `appkit`, `menu-bar-app`, `productivity`, `open-source`
+## Show HN
 
-See `keyword-strategy.md` for why no topic uses another product's name.
+Preconditions: the repository is public. Check the source install on a real Mac before posting. Keep the measurement conditions with the speed figures.
+Preconditions for optional lines: confirm P1, P2, P4 and P5 on a real Mac, or delete the tagged lines. <!-- P1 P2 P4 P5 -->
 
----
-
-## 2. Show HN
-
-**Title**
-
+<!-- count: Show HN title; max: 80 -->
+```text
+Show HN: JustTab — a free, open-source window switcher for macOS
 ```
-Show HN: JustTab, Windows-style Alt-Tab for Mac (switch windows, not apps)
-```
+(64/80)
 
 **First comment**
 
-```
-JustTab is a free, open-source, Windows-style Alt-Tab for the Mac: it switches windows, not just apps. Free forever, with no paywall, no Pro tier and no upsell. It does one job and has one real setting, the shortcut. It is a stripped-down fork of alttab-macos by Sergio Farfan (MIT), which was itself inspired by AltTab by lwouis.
+```text
+JustTab switches between individual windows, not just apps. It puts windows from all apps in one grid, ordered most recently used first. On macOS, Cmd-Tab switches apps; Cmd-` cycles windows of the current app only.
 
-The motivation: if you come to the Mac from Windows, you are used to holding Alt, tapping Tab, seeing every window, and releasing to switch. On macOS, Cmd-Tab switches between apps, and Cmd-` cycles windows of the current app only. JustTab switches between individual windows and shows them as a grid of live thumbnails.
+Hold Option+Tab, tap Tab or the arrow keys to move, then release to switch. Shift+Tab goes back, Esc cancels, and clicking a thumbnail switches to it. The previous window is selected on opening, so a quick press and release toggles between your two most recent windows. Minimized windows are included and shown dimmed.
 
-Behavior:
-- Default shortcut is Option+Tab. On a PC keyboard connected to a Mac, the Alt key acts as Option, so it is physically Alt+Tab. You can change it to any modifier + key combination, including Cmd+Tab, which then replaces the built-in switcher.
-- Hold the shortcut, tap Tab or the arrow keys to move, Shift+Tab to go back, release to switch. Esc cancels.
-- Windows are ordered most recently used first, and it opens with the previous window selected, so a quick press and release toggles between your two latest windows.
-- Minimized windows are included.
+The shortcut is the one real setting, with a separate Launch at Login toggle. Record any key plus one or more of Control, Option, Shift and Cmd via Change Shortcut… in the menu bar. Esc cancels recording. Cmd+Tab replaces the built-in app switcher while JustTab runs. There is no Dock icon.
 
-Other facts: MIT-licensed, about 316 KB, pure Swift + AppKit with no third-party dependencies, and no networking code (no telemetry, account or update checks).
+Pure Swift + AppKit, zero third-party dependencies, about 2,600 lines of Swift and about 520 KB on disk. Memory use is about 25 MB. On the developer's Mac with 22 windows open in November 2026, the median of real Cmd+Tab use was about 34 ms from key press to the switcher appearing and about 55 ms from key press to the first live thumbnail. These are measurements under those conditions.
 
-Limitations: it only lists windows on the current Space, plus minimized ones. It needs macOS 13+ and Accessibility permission. Live thumbnails need macOS 14+ and Screen Recording permission; otherwise it shows app icons.
+The source uses exactly one private macOS function: _AXUIElementGetWindow, to match an accessibility window to its window ID.
 
-Install: there is no prebuilt download, notarized build, App Store or Homebrew listing. You build it from source with full Xcode:
+- Apps hidden with Cmd-H are listed; choosing a window brings the app back. [P1]
+- Windows on other desktops (Spaces) are listed; choosing one switches to that desktop. [P2]
+- The switcher opens on the display that has the mouse pointer. [P4]
+- After each switch, JustTab checks that the chosen window came to the front and retries once if needed. [P5]
 
-  git clone https://github.com/shuaige121/justtab.git
-  cd justtab
-  ./build.sh install
+Requires macOS 13+ and Accessibility permission. Live thumbnails need macOS 14+ and Screen Recording permission; otherwise, app icons are shown.
 
-Feedback is welcome.
-```
-
----
-
-## 3. Reddit r/macapps
-
-**Title**
-
-```
-JustTab: Windows-style Alt-Tab for Mac, switches windows not apps (free forever, open source, build from source)
-```
-
-**Body**
-
-```
-If you moved from Windows, you probably still reach for Alt-Tab: hold Alt, tap Tab, see every window, release to switch. On macOS, Cmd-Tab switches apps, not windows.
-
-JustTab is free forever and open source, with no paywall, no Pro tier and no upsell. It does one job: it switches individual windows and shows a grid of live thumbnails. The default shortcut is Option+Tab, which is the Alt key on a PC keyboard used with a Mac. You can change it to any modifier + key combination, including Cmd+Tab (which then replaces the built-in switcher).
-
-- Hold the shortcut, tap Tab or the arrow keys, release to switch. Shift+Tab goes back, Esc cancels, clicking a thumbnail switches to it.
-- Most recently used first. A quick press and release toggles between your two latest windows.
-- Minimized windows are included.
-- The grid shrinks cells so every window fits on screen.
-- Lives in the menu bar, no Dock icon. The shortcut is the only real setting, plus Launch at Login.
-- Free forever, MIT, open source. No paywall, no Pro tier, no upsell. No networking code: no telemetry, no account, no update checks. About 316 KB, Swift + AppKit, no third-party dependencies.
-
-Limitations: only windows on the current Space are listed (plus minimized ones). Needs macOS 13+ and Accessibility permission. Live thumbnails need macOS 14+ and Screen Recording permission; otherwise you get app icons.
-
-How to install today: build from source with full Xcode. There is no prebuilt download, no notarized build, and no App Store or Homebrew listing.
-
-  git clone https://github.com/shuaige121/justtab.git
-  cd justtab
-  ./build.sh install
-
-Repo: https://github.com/shuaige121/justtab
-JustTab is a stripped-down fork of alttab-macos by Sergio Farfan (MIT), itself inspired by AltTab by lwouis.
-```
-
----
-
-## 4. Product Hunt
-
-Note: Product Hunt listings usually expect a way to try the product. With build-from-source only [F13], consider holding this one until a prebuilt option exists; that is the owner's call.
-
-**Tagline (<=60 characters; 55 used)**
-
-```
-Windows-style Alt-Tab for Mac: switch windows, not apps
-```
-
-**Description**
-
-```
-JustTab is a free, open-source, Windows-style Alt-Tab for the Mac. It switches between individual windows, not just apps. Hold the shortcut, see a grid of live window thumbnails, tap Tab to move, release to switch. The default shortcut is Option+Tab, which is the Alt key on a PC keyboard used with a Mac, so it is physically Alt+Tab. It can be changed to any modifier + key combination, including Cmd+Tab.
-
-Windows are ordered most recently used first, minimized windows are included, and a quick press and release toggles between your two latest windows. Free forever with no paywall, no Pro tier and no upsell; MIT-licensed, open source, no networking code, about 316 KB. One job, one real setting (the shortcut).
-
-Limitation: only windows on the current Space are listed. Requires macOS 13+ and Accessibility permission; live thumbnails need macOS 14+ and Screen Recording permission.
-
-Install today: build from source with full Xcode (no prebuilt download). A stripped-down fork of alttab-macos by Sergio Farfan (MIT), itself inspired by AltTab by lwouis.
-```
-
----
-
-## 5. V2EX (Chinese)
-
-**Title**
-
-```
-JustTab：Mac 像 Windows 一样 Alt+Tab 切换窗口（永久免费、开源，需从源码构建）
-```
-
-**Body**
-
-```
-JustTab 是一个永久免费、开源的 Mac 窗口切换器：像 Windows 一样用 Alt+Tab 切换窗口，而不只是切换 App。没有付费版，也不会有；只做这一件事，只有一个真正的设置，就是快捷键。
-
-从 Windows 转到 Mac 之后，Alt-Tab 的习惯很难改：按住 Alt，点 Tab，看到所有窗口，松手切换。macOS 的 Cmd-Tab 切换的是 App 而不是窗口，Cmd-` 也只能在当前 App 的窗口之间切换。
-
-JustTab 做的就是这件事：在单个窗口之间切换，并以实时缩略图网格显示。默认快捷键是 Option+Tab。PC 键盘接到 Mac 上时，Alt 键等同于 Option，所以实际按的就是 Alt+Tab。快捷键可以改成任意「修饰键 + 按键」的组合，包括 Cmd+Tab（此时会取代系统自带的切换器）。
-
-操作：
-- 按住快捷键，Tab 或方向键移动选择，Shift+Tab 返回，松手即切换；Esc 取消；也可以直接点击缩略图。
-- 窗口按最近使用顺序排列，打开时默认选中上一个窗口，所以快速按下再松开就是在最近两个窗口之间来回切换。
-- 包含已最小化的窗口。
-- 窗口多时网格会缩小单元格，保证都显示在屏幕内。
-- 常驻菜单栏，没有 Dock 图标。唯一真正的设置是快捷键，另有「登录时启动」开关。
-
-其他信息：MIT 协议，开源；永久免费，不收费，也不会在应用内销售任何功能；不含任何联网代码，没有遥测、账号和更新检查；纯 Swift + AppKit，零第三方依赖，约 316 KB。
-
-限制：只列出当前 Space（桌面）上的窗口，加上已最小化的窗口，其他 Space 的窗口不显示。需要 macOS 13 及以上和辅助功能权限；实时缩略图需要 macOS 14 及以上和屏幕录制权限，否则显示 App 图标。
-
-安装方式（目前只有这一种）：需要完整版 Xcode，从源码构建。没有预编译下载包，没有公证版本，也没有 App Store 或 Homebrew 上架。
-
+Install today with full Xcode:
 git clone https://github.com/shuaige121/justtab.git
 cd justtab
 ./build.sh install
+This installs to ~/Applications.
+
+Free forever and open source (MIT). No paywall, no Pro tier, no upsell; nothing in the app will ever be sold. The app contains no networking code: no telemetry, no account, no update checks.
+
+Repository: https://github.com/shuaige121/justtab
+JustTab is a stripped-down fork of alttab-macos by Sergio Farfan (MIT), itself inspired by AltTab by lwouis.
+```
+
+## r/macapps
+
+Preconditions: the repository is public. Check the source install before posting. Attach only reviewed footage of JustTab if footage is used.
+Preconditions for optional lines: confirm P1 and P2 on a real Mac, or delete the tagged lines. <!-- P1 P2 -->
+
+**Title**
+
+```text
+JustTab: individual window switching on macOS, free forever and open source
+```
+
+**Post**
+
+```text
+JustTab brings windows from all apps into one thumbnail grid. It does one job: switching windows. The shortcut is the one real setting, with a separate Launch at Login toggle.
+
+The default is Option+Tab. On a PC keyboard connected to a Mac, Alt acts as Option, so it is physically Alt+Tab. You can record any key plus one or more of Control, Option, Shift and Cmd through Change Shortcut… in the menu bar. Esc cancels recording. Choosing Cmd+Tab replaces the built-in app switcher while JustTab runs.
+
+- Hold the shortcut, tap Tab or the arrow keys, release to switch. Shift+Tab goes back, Esc cancels, and clicking a thumbnail switches to it.
+- Most recently used windows come first. The previous window is selected on opening, so a quick press and release toggles between your two most recent windows.
+- Minimized windows are included, shown dimmed. Grid cells shrink so every listed window fits on screen.
+- Lives in the menu bar, with no Dock icon.
+- Apps hidden with Cmd-H are listed; choosing a window brings the app back. [P1]
+- Windows on other desktops (Spaces) are listed; choosing one switches to that desktop. [P2]
+
+Free forever, MIT-licensed and open source. No paywall, no Pro tier, no upsell; nothing in the app will ever be sold. No networking code: no telemetry, no account, no update checks.
+
+Requires macOS 13+ and Accessibility permission. Live thumbnails need macOS 14+ and Screen Recording permission; otherwise, app icons are shown.
+
+Install today by building with full Xcode:
+git clone https://github.com/shuaige121/justtab.git
+cd justtab
+./build.sh install
+This installs to ~/Applications.
+
+Repository: https://github.com/shuaige121/justtab
+JustTab is a stripped-down fork of alttab-macos by Sergio Farfan (MIT), itself inspired by AltTab by lwouis.
+```
+
+## Product Hunt
+
+Preconditions: the repository is public. The owner has reviewed a real source installation and the gallery assets below. Use the repository as the product link. Check the platform's current upload requirements at upload time.
+
+**Name**
+
+```text
+JustTab
+```
+
+<!-- count: Product Hunt tagline; max: 60 -->
+```text
+Switch individual windows on macOS. Free forever.
+```
+(49/60)
+
+<!-- count: Product Hunt description; max: 260 -->
+```text
+A free, open-source macOS window switcher. Hold Option+Tab, choose a window, release to switch. Requires macOS 13+ and Accessibility permission. Live thumbnails need macOS 14+ and Screen Recording permission. Build from source with full Xcode.
+```
+(243/260)
+
+**First comment**
+
+```text
+JustTab puts windows from all apps into one grid. Windows are ordered most recently used first; the previous window is selected when it opens. A quick press and release toggles between your two most recent windows. Minimized windows are included and shown dimmed.
+
+Hold the shortcut, tap Tab or the arrow keys to move, Shift+Tab to go back, and release to switch. Esc cancels. Clicking a thumbnail switches to it.
+
+Default shortcut: Option+Tab. Record any key plus one or more of Control, Option, Shift and Cmd from Change Shortcut… in the menu bar; Esc cancels recording. Cmd+Tab replaces the built-in app switcher while JustTab runs. The only other setting is Launch at Login. No Dock icon.
+
+Free forever, MIT-licensed and open source. No paywall, no Pro tier, no upsell. Nothing in the app will ever be sold. The app contains no networking code: no telemetry, no account, no update checks.
+
+Requires macOS 13+ and Accessibility permission. Live thumbnails need macOS 14+ and Screen Recording permission; without them, app icons are shown.
+
+Install today with full Xcode:
+git clone https://github.com/shuaige121/justtab.git
+cd justtab
+./build.sh install
+This installs to ~/Applications.
+
+Repository: https://github.com/shuaige121/justtab
+JustTab is a stripped-down fork of alttab-macos by Sergio Farfan (MIT), itself inspired by AltTab by lwouis.
+```
+
+**Gallery shot list (capture directions, not public copy)**
+
+1. Real JustTab grid over neutral demo windows. Include more than one window from the same app (F2); show the macOS 14+ and Screen Recording requirement in the caption (F12).
+2. Two frames from the real recording: selection in the grid, then the chosen window in front after release (F3).
+3. A real grid with a minimized window shown dimmed (F7).
+4. The real menu bar menu showing Change Shortcut… and Launch at Login (F5).
+5. The real app with Screen Recording permission withheld, showing app icons (F12).
+
+Use the sequence and privacy checks in `capture-plan.md`. Do not invent app UI or use upstream imagery.
+
+## X thread
+
+Preconditions: the repository is public. Publish all five posts in order so the install, permission and credit context stays with the introduction. No assets are required.
+
+<!-- count: X post 1; max: 280 -->
+```text
+JustTab switches individual windows on macOS in one grid. Free forever and open source (MIT). No paywall, no Pro tier, no upsell. The app contains no networking code: no telemetry, no account, no update checks.
+```
+(210/280)
+
+<!-- count: X post 2; max: 280 -->
+```text
+Hold Option+Tab, tap Tab or the arrow keys, release to switch. Shift+Tab goes back; Esc cancels. On a PC keyboard connected to a Mac, Alt acts as Option, so the physical shortcut is Alt+Tab. A quick press and release toggles between your two most recent windows.
+```
+(262/280)
+
+<!-- count: X post 3; max: 280 -->
+```text
+Record any key plus Control, Option, Shift or Cmd (one or more) via Change Shortcut… in the menu bar; Esc cancels recording. Cmd+Tab replaces the built-in app switcher while JustTab runs. The only other setting is Launch at Login. No Dock icon.
+```
+(244/280)
+
+<!-- count: X post 4; max: 280 -->
+```text
+Requires macOS 13+ and Accessibility permission. Live thumbnails need macOS 14+ and Screen Recording permission; otherwise, app icons are shown. Install today: build from source with full Xcode. Instructions: https://github.com/shuaige121/justtab#install
+```
+(254/280)
+
+<!-- count: X post 5; max: 280 -->
+```text
+JustTab is a stripped-down fork of alttab-macos by Sergio Farfan (MIT), itself inspired by AltTab by lwouis. Minimized windows are included and shown dimmed. Grid cells shrink so every listed window fits on screen. https://github.com/shuaige121/justtab
+```
+(252/280)
+
+## V2EX（中文）
+
+发布前提：仓库已公开，已在真实 Mac 上检查源码安装流程。节点由主人选择。仅复制下方正文，不发布这些编辑说明。
+可选内容前提：先在真实 Mac 上确认 P1、P2，否则删除带标签的行。 <!-- P1 P2 -->
+
+**标题**
+
+```text
+JustTab：在 Mac 上按窗口切换，永久免费、开源
+```
+
+**正文**
+
+```text
+macOS 的 Cmd-Tab 切换 App，Cmd-` 只切换当前 App 的窗口。如果同一个 App 开了多个窗口，JustTab 可以把它们和其他 App 的窗口放在一个网格里选择。
+
+JustTab 默认用 Option+Tab。PC 键盘接到 Mac 时，Alt 键等同于 Option，实际按的就是 Alt+Tab。按住快捷键，点按 Tab 或方向键移动选择，Shift+Tab 返回，松手切换；Esc 取消，也可以直接点击缩略图。
+
+窗口按最近使用顺序排列，打开时默认选中上一个窗口。快速按下再松开，就能在最近两个窗口之间来回切换。已最小化的窗口也会列出，显示为暗色；网格会缩小单元格，让所有已列出的窗口都能显示在屏幕内。
+
+在菜单栏打开 Change Shortcut…，可以录制任意按键加一个或多个 Control、Option、Shift、Cmd，Esc 取消录制。设为 Cmd+Tab 后，JustTab 运行时会取代系统自带的 App 切换器。主要设置只有快捷键，另有 Launch at Login 开关；没有 Dock 图标。
+
+用 Cmd-H 隐藏的 App，其窗口也会列出，选中后重新显示该 App。 [P1]
+其他桌面（Spaces）的窗口也会列出，选中后切换到对应桌面。 [P2]
+
+永久免费，MIT 协议，开源。没有付费墙、Pro 版或升级推销，应用内不会出售任何内容。不含联网代码，无遥测、无账号、不检查更新。
+
+纯 Swift + AppKit，零第三方依赖，约 2,600 行 Swift，应用占用磁盘空间约 520 KB。
+
+需要 macOS 13 或更高版本，以及辅助功能权限。实时缩略图需要 macOS 14 或更高版本及屏幕录制权限，否则显示 App 图标。
+
+目前需要完整版 Xcode，从源码构建安装：
+git clone https://github.com/shuaige121/justtab.git
+cd justtab
+./build.sh install
+安装位置为 ~/Applications。
 
 仓库：https://github.com/shuaige121/justtab
-
-JustTab 是 Sergio Farfan 的 alttab-macos（MIT）的精简 fork，后者受 lwouis 的 AltTab 启发。欢迎反馈。
+JustTab 是 Sergio Farfan 的 alttab-macos（MIT）的精简 fork，后者受 lwouis 的 AltTab 启发。
 ```
 
----
+## Xiaohongshu（中文）
 
-## 6. Xiaohongshu note (Chinese)
+发布前提：仓库已公开，已检查源码安装流程。若配图，只用经过检查的 JustTab 实拍画面；上传时核对平台的当前要求。仅复制下方标题和正文。
 
-**Title (18 characters, limit 20)**
-
+<!-- count: Xiaohongshu title; max: 20 -->
+```text
+Mac 按窗口切换
 ```
-Mac 上用 Alt+Tab 切窗口
-```
+(9/20)
 
-**Body**
+**正文**
 
-```
-Mac 像 Windows 一样用 Alt+Tab 切换窗口：JustTab，永久免费、开源。
+```text
+同一个 App 开了几个窗口，想直接选到其中一个，可以用 JustTab。它把各个 App 的窗口放在同一个网格里。
 
-从 Windows 换到 Mac，最先不习惯的可能就是切窗口。
+默认按 Option+Tab：按住，点 Tab 或方向键移动选择，松手切换。Shift+Tab 返回，Esc 取消，也可以点击缩略图。PC 键盘接 Mac 时，Alt 键就是 Option，实际按的仍是 Alt+Tab。
 
-Windows 里：按住 Alt，点 Tab，所有窗口都列出来，松手就切过去。
-Mac 里：Cmd-Tab 切换的是 App，不是窗口；Cmd-` 只能在当前 App 的窗口之间切换。
+窗口按最近使用顺序排列，打开时选中上一个窗口。快速按下再松开，就在最近两个窗口之间来回切换。已最小化的窗口也会列出，显示为暗色。
 
-JustTab 把 Windows 的这套操作带到了 Mac 上：
-· 在单个窗口之间切换，以实时缩略图网格显示
-· 默认快捷键是 Option+Tab。PC 键盘接 Mac 时，Alt 键就是 Option，按的还是 Alt+Tab
-· 按最近使用顺序排列，快速按下再松开，就在最近两个窗口之间来回切换
-· 包含已最小化的窗口
-· 快捷键可以改，包括改成 Cmd+Tab
-· 永久免费，没有付费版，不推销，也不会在应用内收费；MIT 协议，开源，不含联网代码，约 316 KB
-· 只做一件事，只有一个真正的设置：快捷键
+JustTab 常驻菜单栏，没有 Dock 图标。主要设置只有快捷键，另有「登录时启动」开关。永久免费、MIT 协议、开源，没有付费墙、Pro 版或升级推销，应用内不会出售任何内容。不含联网代码，无遥测、无账号、不检查更新。
 
-需要注意：
-· 只显示当前桌面（Space）上的窗口，其他桌面的窗口不显示
-· 需要 macOS 13 及以上，需要辅助功能权限；实时缩略图需要 macOS 14 及以上和屏幕录制权限，否则显示 App 图标
-· 目前没有下载安装包，只能用完整版 Xcode 从源码构建：
-  git clone https://github.com/shuaige121/justtab.git
-  cd justtab
-  ./build.sh install
+需要 macOS 13 或更高版本及辅助功能权限。实时缩略图需要 macOS 14 或更高版本及屏幕录制权限，否则显示 App 图标。
 
+目前需要完整版 Xcode，从源码构建安装：
+git clone https://github.com/shuaige121/justtab.git
+cd justtab
+./build.sh install
+安装到 ~/Applications。
+
+仓库：https://github.com/shuaige121/justtab
 JustTab 是 Sergio Farfan 的 alttab-macos（MIT）的精简 fork，后者受 lwouis 的 AltTab 启发。
 
-#Mac切换窗口 #Mac窗口切换 #Windows转Mac #macOS #效率工具 #开源
+#Mac窗口切换 #macOS #开源
 ```
-
-Notes: this note would be stronger with a screen recording; none exists, so none is referenced. Hashtags are topic labels, not claims. V2EX: post in the Mac / macOS node (owner picks the node); suggested tags: Mac, macOS, 窗口切换, 效率工具, 开源. See `keyword-strategy.md`.
