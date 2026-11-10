@@ -11,7 +11,7 @@ Builds JustTab (Release), signs it, wraps it in a DMG, and notarizes it.
 
   (no flag)       Full release: Developer ID signature, notarization by Apple
                   (uploads the DMG to Apple), stapling, Gatekeeper check.
-  --no-notarize   Pipeline test only. Signs with SIGN_IDENTITY or an
+  --no-notarize   Pipeline test only. Signs with JUSTTAB_SIGN_IDENTITY or an
                   "Apple Development" identity, skips notarization, stapling
                   and spctl, never contacts Apple. The DMG is a local test
                   build that Gatekeeper will block on other Macs.
@@ -19,6 +19,9 @@ Builds JustTab (Release), signs it, wraps it in a DMG, and notarizes it.
 Environment:
   SIGN_IDENTITY   Signing identity (name or SHA-1). Default: the first
                   "Developer ID Application" identity in the keychain.
+  JUSTTAB_SIGN_IDENTITY
+                  Signing identity for --no-notarize. Default: the first
+                  valid "Apple Development:" identity in the keychain.
   NOTARY_PROFILE  notarytool keychain profile. Default: justtab-notary
   BUILD_DIR       Derived data folder. Default: $HOME/work/justtab-build/release
   DIST_DIR        DMG output folder.  Default: $HOME/work/justtab-build/dist
@@ -54,18 +57,18 @@ NOTARY_PROFILE="${NOTARY_PROFILE:-justtab-notary}"
 IDENTITIES="$(security find-identity -v -p codesigning || true)"
 find_hash() { printf '%s\n' "$IDENTITIES" | grep "\"$1" | head -n 1 | awk '{print $2}' || true; }
 
-if [ -n "${SIGN_IDENTITY:-}" ]; then
+if [ "$NOTARIZE" = 0 ]; then
+  IDENTITY="${JUSTTAB_SIGN_IDENTITY:-}"
+  [ -n "$IDENTITY" ] || IDENTITY="$(find_hash 'Apple Development:')"
+  [ -n "$IDENTITY" ] || die "no valid 'Apple Development:' identity in the keychain.
+Create an Apple Development certificate, or set JUSTTAB_SIGN_IDENTITY for --no-notarize."
+elif [ -n "${SIGN_IDENTITY:-}" ]; then
   IDENTITY="$SIGN_IDENTITY"
 elif [ "$NOTARIZE" = 1 ]; then
   IDENTITY="$(find_hash 'Developer ID Application')"
   [ -n "$IDENTITY" ] || die "no 'Developer ID Application' identity in the keychain.
 Create one first (see docs/RELEASE.md, step 1), or set SIGN_IDENTITY.
 Use --no-notarize to test the pipeline with a development identity."
-else
-  IDENTITY="$(find_hash 'Developer ID Application')"
-  [ -n "$IDENTITY" ] || IDENTITY="$(find_hash 'Apple Development: Leonard Chow')"
-  [ -n "$IDENTITY" ] || IDENTITY="$(find_hash 'Apple Development')"
-  [ -n "$IDENTITY" ] || die "no signing identity found; set SIGN_IDENTITY"
 fi
 echo "Signing identity: $IDENTITY"
 
