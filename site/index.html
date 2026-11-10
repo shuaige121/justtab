@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="description" content="JustTab is a free, open-source window switcher for macOS. Switch individual windows in one grid. Build from source with full Xcode.">
+<title>JustTab — Switch individual windows on macOS</title>
+<style>
+:root { color-scheme: light dark; --bg: #f7f7f3; --paper: #fff; --ink: #202722; --muted: #545e57; --line: #cbd1ca; --accent: #28513c; --soft: #e6eae4; --block: #ced5cd; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+a { color: var(--accent); text-underline-offset: .2em; overflow-wrap: anywhere; }
+a:focus-visible, button:focus-visible { outline: 3px solid var(--accent); outline-offset: 5px; }
+.wrap { max-width: 1120px; margin: auto; padding: 0 28px; }
+.top { display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; align-items: center; padding-top: 28px; padding-bottom: 28px; border-bottom: 1px solid var(--line); }
+.wordmark { font-size: 22px; font-weight: 700; letter-spacing: -.04em; }
+.meta, .eyebrow { color: var(--muted); font-size: 13px; letter-spacing: .07em; }
+.eyebrow { text-transform: uppercase; }
+.hero { display: grid; grid-template-columns: 1.15fr 1fr; gap: 56px; align-items: center; padding: 76px 0; }
+.hero > *, .columns > * { min-width: 0; }
+h1 { font-size: clamp(40px, 5.6vw, 64px); line-height: 1.06; letter-spacing: -.055em; margin: 20px 0 26px; max-width: 12ch; }
+h2 { font-size: 30px; line-height: 1.2; letter-spacing: -.035em; margin: 0 0 28px; }
+h3 { font-size: 18px; line-height: 1.4; margin: 0 0 10px; }
+p { margin: 0 0 18px; }
+.lead { font-size: 20px; }
+.actions { display: flex; flex-wrap: wrap; gap: 12px; margin: 28px 0 20px; }
+.button { display: inline-block; padding: 12px 18px; border: 1px solid var(--accent); border-radius: 7px; background: var(--accent); color: var(--paper); font: inherit; font-weight: 600; text-decoration: none; }
+.button:hover { text-decoration: underline; }
+button.button:disabled { background: transparent; color: var(--muted); border-color: var(--line); cursor: default; }
+.note { font-size: 14px; color: var(--muted); }
+kbd { font: inherit; font-size: .9em; white-space: nowrap; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 1px 5px; background: var(--paper); }
+.illustration { background: var(--soft); border: 1px solid var(--line); border-radius: 24px; padding: 24px; transform: rotate(-2deg); }
+.grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; padding: 18px; border: 1px solid var(--line); border-radius: 16px; background: var(--paper); }
+.window { aspect-ratio: 1.2; border: 1px solid var(--line); border-radius: 7px; background: var(--soft); padding: 8px; }
+.window:before { content: ""; display: block; width: 38%; height: 4px; margin-bottom: 9px; border-radius: 3px; background: var(--block); }
+.window:after { content: ""; display: block; height: 48%; border-radius: 3px; background: var(--block); }
+.window.selected { outline: 3px solid var(--accent); outline-offset: 3px; }
+.window.dim { opacity: .45; }
+.visual-keys { text-align: center; padding-top: 24px; }
+.section { padding: 48px 0; border-top: 1px solid var(--line); }
+.columns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; }
+.step { display: block; color: var(--muted); font-size: 13px; margin-bottom: 18px; }
+.features { padding-left: 21px; max-width: 780px; }
+.features li { padding-left: 6px; margin: 12px 0; }
+.privacy { max-width: 740px; }
+.faq { max-width: 800px; }
+.answer { padding: 24px 0; border-top: 1px solid var(--line); }
+.answer p:last-child { margin-bottom: 0; }
+.footer { padding: 36px 0 48px; border-top: 1px solid var(--line); font-size: 14px; color: var(--muted); }
+.footer p { max-width: 760px; }
+@media (max-width: 720px) {
+  .wrap { padding-left: 22px; padding-right: 22px; }
+  .hero { grid-template-columns: minmax(0, 1fr); gap: 32px; padding: 44px 0; }
+  h1 { max-width: 13ch; }
+  .illustration { max-width: 420px; width: 100%; justify-self: center; transform: none; padding: 18px; }
+  .grid { padding: 14px; gap: 10px; }
+  .columns { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  .step { margin-bottom: 8px; }
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #171c19; --paper: #202722; --ink: #edf0eb; --muted: #b6c1b8; --line: #46534a; --accent: #b1d3b5; --soft: #2b352e; --block: #48574b; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="top" role="banner"><span class="wordmark">JustTab</span><span class="meta">macOS 13+ · MIT · Free forever</span></div>
+<div role="main">
+<div class="hero">
+<div>
+<p class="eyebrow">A window switcher for macOS</p>
+<h1>Switch individual windows.</h1>
+<p class="lead">Windows from all apps, in one thumbnail grid. Hold the shortcut, choose a window, release to switch.</p>
+<p>The default is <kbd>Option+Tab</kbd>. On a PC keyboard connected to a Mac, Alt acts as Option: physically, <kbd>Alt+Tab</kbd>.</p>
+<div class="actions">
+<a class="button" href="https://github.com/shuaige121/justtab">View on GitHub</a>
+<button class="button" type="button" disabled>Download (planned)</button> <!-- P3 -->
+</div>
+<p class="note">Install today: <a href="https://github.com/shuaige121/justtab#install">build from source with full Xcode</a>. Installs to ~/Applications.</p>
+<p class="note">A Developer ID-signed DMG notarized by Apple is planned for GitHub Releases; it is not available yet.</p> <!-- P3 -->
+<p class="note">Requires macOS 13+ and Accessibility permission. Live thumbnails need macOS 14+ and Screen Recording permission; otherwise, app icons are shown.</p>
+</div>
+<div class="illustration" role="img" aria-label="Abstract illustration of a window grid, with one block selected">
+<div class="grid" aria-hidden="true"><div class="window"></div><div class="window selected"></div><div class="window"></div><div class="window"></div><div class="window"></div><div class="window dim"></div></div>
+<div class="visual-keys" aria-hidden="true"><kbd>Option</kbd> + <kbd>Tab</kbd></div>
+</div>
+</div>
+<div class="section" aria-labelledby="how">
+<h2 id="how">Hold. Choose. Release.</h2>
+<div class="columns">
+<div><span class="step">01 / Open</span><h3>Hold Option, press Tab.</h3><p>The previous window is selected when the switcher opens.</p></div>
+<div><span class="step">02 / Choose</span><h3>Move through the grid.</h3><p>Keep holding. Tap Tab or the arrow keys to move. Shift+Tab goes back.</p></div>
+<div><span class="step">03 / Switch</span><h3>Release to switch.</h3><p>Esc cancels. Clicking a thumbnail also switches to that window.</p></div>
+</div>
+</div>
+<div class="section" aria-labelledby="features">
+<h2 id="features">One job: switching windows.</h2>
+<ul class="features">
+<li><strong>Most recently used first.</strong> A quick press and release toggles between your two most recent windows.</li>
+<li><strong>Minimized windows included.</strong> They are shown dimmed.</li>
+<li><strong>A grid that fits.</strong> Cells shrink so every listed window fits on screen.</li>
+<li><strong>Your shortcut.</strong> Record any key plus one or more of Control, Option, Shift and Cmd from the menu bar via Change Shortcut…; Esc cancels recording. The only other setting is Launch at Login.</li>
+<li><strong>In the menu bar.</strong> No Dock icon.</li>
+<li><strong>Swift + AppKit.</strong> Zero third-party dependencies, about 2,600 lines of Swift, about 520 KB on disk.</li>
+<li>Apps hidden with Cmd-H are listed; choosing a window brings the app back.</li> <!-- P1 -->
+<li>Windows on other desktops (Spaces) are listed; choosing one switches to that desktop.</li> <!-- P2 -->
+<li>The switcher opens on the display that has the mouse pointer.</li> <!-- P4 -->
+<li>After each switch, JustTab checks that the chosen window came to the front and retries once if needed.</li> <!-- P5 -->
+</ul>
+</div>
+<div class="section" aria-labelledby="privacy">
+<h2 id="privacy">No networking code.</h2>
+<div class="privacy"><p>No telemetry, no account, no update checks. Accessibility permission is required. Live thumbnails require macOS 14+ and Screen Recording permission; without them, app icons are shown.</p><p>JustTab is free forever, MIT-licensed and open source. No paywall, no Pro tier, no upsell. Nothing in the app will ever be sold.</p></div>
+</div>
+<div class="section faq" aria-labelledby="faq">
+<h2 id="faq">Questions, answered.</h2>
+<div class="answer"><h3>Why not on the Mac App Store?</h3><p>App Store apps must be sandboxed. A sandboxed app cannot use the Accessibility API to list or focus other apps' windows, as explained by Apple Developer Technical Support on Apple Developer Forums in 2024 and 2025. Window switchers of this kind are distributed directly. JustTab is not on the Mac App Store; install it from source today.</p></div>
+<p>A Developer ID-signed DMG notarized by Apple is planned for GitHub Releases.</p> <!-- P3 -->
+<div class="answer"><h3>Can it replace Cmd-Tab?</h3><p>Yes. Open Change Shortcut… from the menu bar and record Cmd+Tab. It replaces the built-in app switcher while JustTab runs. Any key plus one or more of Control, Option, Shift and Cmd can be recorded. Esc cancels recording.</p><p>On macOS, Cmd-Tab switches apps; Cmd-` cycles windows of the current app only.</p></div>
+<div class="answer"><h3>Does it phone home?</h3><p>No. The app contains no networking code: no telemetry, no account, no update checks.</p></div>
+<div class="answer"><h3>What about windows on other desktops or hidden apps?</h3><p>Windows of apps hidden with Cmd-H are listed; choosing one brings the app back.</p><p>Windows on other desktops (Spaces) are listed; choosing one switches to that desktop.</p></div> <!-- P1 P2 -->
+<div class="answer"><h3>Does it use private macOS functions?</h3><p>The source uses exactly one private macOS function, <code>_AXUIElementGetWindow</code>, to match an accessibility window to its window ID.</p></div>
+</div>
+</div>
+<div class="footer" role="contentinfo"><p>JustTab is a stripped-down fork of alttab-macos by Sergio Farfan (MIT), itself inspired by AltTab by lwouis.</p><p>MIT license · Free forever · <a href="https://github.com/shuaige121/justtab#license">License in the README</a> · <a href="https://github.com/shuaige121/justtab#usage">Usage</a></p></div>
+</div>
+</body>
+</html>
