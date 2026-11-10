@@ -91,7 +91,11 @@ final class SwitcherPanel: NSPanel {
 
         guard !windows.isEmpty else { return }
 
-        let screen = NSScreen.main ?? NSScreen.screens.first!
+        // Screen rule: the screen containing the mouse pointer, else NSScreen.main, else the first screen.
+        // Adapted from alttab-macos (MIT).
+        let mouseLocation = NSEvent.mouseLocation
+        guard let screen = NSScreen.screens.first(where: { NSMouseInRect(mouseLocation, $0.frame, false) })
+                ?? NSScreen.main ?? NSScreen.screens.first else { return }
         let area = screen.visibleFrame // excludes menu bar and Dock
 
         // Fit the whole grid inside 90% of the visible screen, shrinking cells when needed.

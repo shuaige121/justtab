@@ -2,13 +2,15 @@
 //  WindowModel.swift
 //  AltTab — Windows-style Window Switcher for macOS
 //
-//  Window enumeration and MRU (most recently used) tracking. Discovers all
-//  user windows via CGWindowListCopyWindowInfo for on-screen windows and
-//  AXUIElement queries for minimized windows. Maintains MRU order using
+//  Window enumeration and MRU (most recently used) tracking. Lists on-screen
+//  windows via CGWindowListCopyWindowInfo, then one AXUIElement pass per app
+//  adds the windows that are not on screen: minimized windows, and standard
+//  windows of ⌘H-hidden apps or on other Spaces. Maintains MRU order using
 //  NSWorkspace activation notifications and per-app AXObservers that track
-//  intra-app focused-window changes (e.g., Cmd-` between two Terminal windows).
-//  Uses the private _AXUIElementGetWindow SPI to bridge between AXUIElement
-//  and CGWindowID — the standard approach for macOS window managers.
+//  the frontmost app's focused-window changes (e.g., Cmd-` between two
+//  Terminal windows). Uses the private _AXUIElementGetWindow SPI to bridge
+//  between AXUIElement and CGWindowID — the standard approach for macOS
+//  window managers.
 //
 //  Author:  Sergio Farfan <sergio.farfan@gmail.com>
 //  Version: 1.1.0
@@ -114,16 +116,18 @@ final class WindowModel {
         for app in apps { installAXObserver(for: app.pid) }
         Self.backgroundAX.async {
             DispatchQueue.concurrentPerform(iterations: apps.count) { i in
-                _ = Self.scanApp(pid: apps[i].pid, name: apps[i].name, needTitle: [], alreadySeen: [])
+                _ = Self.scanApp(pid: apps[i].pid, name: apps[i].name, hidden: apps[i].hidden,
+                                 needTitle: [], onScreen: [])
             }
         }
     }
 
-    private static func regularApps() -> [(pid: pid_t, name: String)] {
+    /// Regular apps other than JustTab. Called on the main thread, where AppKit updates `isHidden`.
+    private static func regularApps() -> [(pid: pid_t, name: String, hidden: Bool)] {
         let selfPID = ProcessInfo.processInfo.processIdentifier
         return NSWorkspace.shared.runningApplications
             .filter { $0.activationPolicy == .regular && $0.processIdentifier != selfPID }
-            .map { ($0.processIdentifier, $0.localizedName ?? "Unknown") }
+            .map { ($0.processIdentifier, $0.localizedName ?? "Unknown", $0.isHidden) }
     }
 
     deinit {
@@ -136,12 +140,14 @@ final class WindowModel {
     /// app then costs at most this long instead of the 6 s system default.
     static let axEnumerationTimeout: Float = 0.25
 
-    /// Returns all user windows, ordered by MRU. One Accessibility round-trip per app: the
-    /// same window list provides minimized windows and any titles CGWindowList didn't give.
+    /// Returns all user windows, ordered by MRU. One window-list query per app: the same list
+    /// provides the windows that are not on screen and any titles CGWindowList didn't give.
+    /// Windows the MRU has not seen yet follow the on-screen ones (see pruneMRU).
     func enumerateWindows() -> [WindowInfo] {
         let selfPID = ProcessInfo.processInfo.processIdentifier
         var windows: [WindowInfo] = []
         var seenIDs = Set<CGWindowID>()
+        var onScreenIDs = Set<CGWindowID>()     // every on-screen window, listed or not
         var untitled: [CGWindowID: Int] = [:]   // CG windows still needing a title → index
         var appsWithFront = Set<pid_t>()
 
@@ -149,6 +155,7 @@ final class WindowModel {
         if let infoList = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements],
                                                       kCGNullWindowID) as? [[String: Any]] {
             for info in infoList { // front to back
+                if let id = info[kCGWindowNumber as String] as? CGWindowID { onScreenIDs.insert(id) }
                 guard var window = parseWindowInfo(info),
                       window.ownerPID != selfPID,
                       !seenIDs.contains(window.windowID) else { continue }
@@ -159,28 +166,33 @@ final class WindowModel {
             }
         }
 
-        // 2. Accessibility pass: minimized windows (not in the CG list) and missing titles.
-        //    Apps are queried in parallel, so the pass costs about as much as the slowest
-        //    app instead of the sum of all of them.
+        // 2. Accessibility pass: windows not on screen (minimized, hidden app, other Space)
+        //    and missing titles. Apps are queried in parallel, so the pass costs about as
+        //    much as the slowest app instead of the sum of all of them.
         let apps = Self.regularApps()
         let needTitle = Set(untitled.keys)
-        let alreadySeen = seenIDs
+        let onScreen = onScreenIDs
         var results = [AXAppScan](repeating: AXAppScan(), count: apps.count)
         results.withUnsafeMutableBufferPointer { buffer in
             DispatchQueue.concurrentPerform(iterations: apps.count) { i in
-                buffer[i] = Self.scanApp(pid: apps[i].pid, name: apps[i].name,
-                                         needTitle: needTitle, alreadySeen: alreadySeen)
+                buffer[i] = Self.scanApp(pid: apps[i].pid, name: apps[i].name, hidden: apps[i].hidden,
+                                         needTitle: needTitle, onScreen: onScreen)
             }
         }
+        var minimized = 0, hidden = 0, otherSpace = 0
         for scan in results {
             for (id, title) in scan.titles {
                 if let index = untitled[id] { windows[index].windowTitle = title }
             }
-            for window in scan.minimized where !seenIDs.contains(window.windowID) {
-                seenIDs.insert(window.windowID)
+            for window in scan.offScreen where seenIDs.insert(window.windowID).inserted {
+                if window.isMinimized { minimized += 1 } else if window.isHidden { hidden += 1 } else { otherSpace += 1 }
                 windows.append(window)
             }
         }
+        perfLog.info("""
+            off-screen windows: \(minimized, privacy: .public) minimized, \
+            \(hidden, privacy: .public) of hidden apps, \(otherSpace, privacy: .public) on other Spaces
+            """)
 
         // 3. Sort by MRU
         pruneMRU(ids: windows.map { $0.windowID })
@@ -193,12 +205,13 @@ final class WindowModel {
     /// What one app contributes to the list. Built on a worker thread; merged on main.
     struct AXAppScan {
         var titles: [CGWindowID: String] = [:]
-        var minimized: [WindowInfo] = []
+        var offScreen: [WindowInfo] = []
     }
 
-    /// One Accessibility round-trip for a single app. Safe to run concurrently for different apps.
-    private static func scanApp(pid: pid_t, name: String,
-                                needTitle: Set<CGWindowID>, alreadySeen: Set<CGWindowID>) -> AXAppScan {
+    /// The Accessibility pass for one app: one window-list query, then at most one read per
+    /// window. Safe to run concurrently for different apps.
+    private static func scanApp(pid: pid_t, name: String, hidden: Bool,
+                                needTitle: Set<CGWindowID>, onScreen: Set<CGWindowID>) -> AXAppScan {
         var scan = AXAppScan()
         let axApp = AXUIElementCreateApplication(pid)
         AXUIElementSetMessagingTimeout(axApp, axEnumerationTimeout)
@@ -206,6 +219,8 @@ final class WindowModel {
         guard AXUIElementCopyAttributeValue(axApp, kAXWindowsAttribute as CFString, &windowsRef) == .success,
               let axWindows = windowsRef as? [AXUIElement] else { return scan }
         for axWindow in axWindows {
+            // Timeouts are per element, so each window read gets the same bound as the app's.
+            AXUIElementSetMessagingTimeout(axWindow, axEnumerationTimeout)
             var windowID: CGWindowID = 0
             _ = _AXUIElementGetWindow(axWindow, &windowID)
             guard windowID != 0 else { continue }
@@ -214,15 +229,47 @@ final class WindowModel {
                 if !title.isEmpty { scan.titles[windowID] = title }
                 continue
             }
-            guard !alreadySeen.contains(windowID) else { continue }
-            var minimizedRef: CFTypeRef?
-            guard AXUIElementCopyAttributeValue(axWindow, kAXMinimizedAttribute as CFString, &minimizedRef) == .success,
-                  (minimizedRef as? Bool) == true else { continue }
-            scan.minimized.append(WindowInfo(windowID: windowID, ownerPID: pid, ownerName: name,
-                                             windowTitle: axString(axWindow, kAXTitleAttribute),
-                                             isMinimized: true))
+            guard !onScreen.contains(windowID) else { continue }
+            // All four attributes in one round-trip, whatever the window turns out to be.
+            var valuesRef: CFArray?
+            guard AXUIElementCopyMultipleAttributeValues(axWindow, offScreenAttributes, [], &valuesRef) == .success,
+                  let values = valuesRef as? [AnyObject],
+                  let window = offScreenWindow(id: windowID, pid: pid, name: name, appHidden: hidden,
+                                               attributes: AXWindowAttributes(values)) else { continue }
+            scan.offScreen.append(window)
         }
         return scan
+    }
+
+    /// Read in this order by `scanApp` and decoded by `AXWindowAttributes.init(_:)`.
+    private static let offScreenAttributes = [kAXMinimizedAttribute, kAXSubroleAttribute,
+                                              kAXSizeAttribute, kAXTitleAttribute] as CFArray
+
+    /// What the Accessibility pass knows about a window that is not on screen.
+    struct AXWindowAttributes {
+        var minimized = false
+        var subrole: String?
+        var size: CGSize?
+        var title = ""
+    }
+
+    /// The list entry for a window the on-screen pass did not see, or nil to leave it out.
+    /// Minimized windows are always listed. Otherwise only standard windows with a size are
+    /// (no palettes, sheets, popovers or invisible helpers); they belong to a ⌘H-hidden app
+    /// or sit on another Space. `isHidden` follows the app for minimized windows too.
+    /// Adapted from alttab-macos (MIT).
+    static func offScreenWindow(id: CGWindowID, pid: pid_t, name: String, appHidden: Bool,
+                                attributes a: AXWindowAttributes) -> WindowInfo? {
+        guard id != 0 else { return nil }
+        if !a.minimized {
+            guard a.subrole == kAXStandardWindowSubrole as String,
+                  let size = a.size, size.width > 0, size.height > 0 else { return nil }
+        }
+        var window = WindowInfo(windowID: id, ownerPID: pid, ownerName: name,
+                                windowTitle: a.title, isMinimized: a.minimized)
+        window.isHidden = appHidden
+        window.isOnOtherSpace = !a.minimized && !appHidden
+        return window
     }
 
     private static func axString(_ element: AXUIElement, _ attribute: String) -> String {
@@ -331,12 +378,26 @@ final class WindowModel {
     }
 
     /// Called from the AXObserver C callback when any app's focused window changes.
+    /// AXUIElementGetPid reads the pid from the element itself, without a round-trip.
     fileprivate func handleFocusedWindowChanged(_ element: AXUIElement) {
-        var windowID: CGWindowID = 0
-        _ = _AXUIElementGetWindow(element, &windowID)
-        if windowID != 0 {
-            promoteToFront(windowID: windowID)
+        var pid: pid_t = 0
+        guard AXUIElementGetPid(element, &pid) == .success else { return }
+        focusedWindowChanged(pid: pid, frontmostPID: NSWorkspace.shared.frontmostApplication?.processIdentifier) {
+            var windowID: CGWindowID = 0
+            _ = _AXUIElementGetWindow(element, &windowID)
+            return windowID
         }
+    }
+
+    /// Promotes a focus change only when it comes from the frontmost app. Background apps
+    /// send them too (Chromium and Electron opening or closing windows, a finished job
+    /// closing its window), and promoting those reorders the list while the user works
+    /// elsewhere. Their window is not looked up either, which saves a round-trip to the app.
+    /// Adapted from alttab-macos (MIT).
+    func focusedWindowChanged(pid: pid_t, frontmostPID: pid_t?, windowID: () -> CGWindowID) {
+        guard pid == frontmostPID else { return }
+        let id = windowID()
+        if id != 0 { promoteToFront(windowID: id) }
     }
 
     /// Watch for app launches and terminations to manage observer lifecycle.
@@ -354,7 +415,9 @@ final class WindowModel {
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                 guard AXIsProcessTrusted() else { return }
                 self?.installAXObserver(for: pid)
-                Self.backgroundAX.async { _ = Self.scanApp(pid: pid, name: name, needTitle: [], alreadySeen: []) }
+                Self.backgroundAX.async {
+                    _ = Self.scanApp(pid: pid, name: name, hidden: false, needTitle: [], onScreen: [])
+                }
             }
         }
 
@@ -382,6 +445,22 @@ final class WindowModel {
         let title = info[kCGWindowName as String] as? String ?? ""
         return WindowInfo(windowID: windowID, ownerPID: ownerPID, ownerName: ownerName,
                           windowTitle: title, isMinimized: false)
+    }
+}
+
+extension WindowModel.AXWindowAttributes {
+    /// Decodes the values read for `offScreenAttributes`. An attribute the window lacks
+    /// arrives as an AXValue holding the error, and keeps its default.
+    init(_ values: [AnyObject]) {
+        self.init()
+        guard values.count == 4 else { return }
+        minimized = values[0] as? Bool ?? false
+        subrole = values[1] as? String
+        if CFGetTypeID(values[2]) == AXValueGetTypeID() {
+            var size = CGSize.zero
+            if AXValueGetValue(values[2] as! AXValue, .cgSize, &size) { self.size = size }
+        }
+        title = values[3] as? String ?? ""
     }
 }
 
