@@ -1,9 +1,32 @@
 # Changelog
 
-All notable changes to AltTab will be documented in this file.
+All notable changes to JustTab will be documented in this file. Versions up to 1.1.1 are from alttab-macos by Sergio Farfan, which JustTab is forked from.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [1.2.0] - 2026-11-11
+
+First JustTab release, forked from alttab-macos 1.1.1.
+
+### Added
+
+- Record your own shortcut from the menu bar (Change Shortcut…): any key plus one or more of Control, Option, Shift and Command, including Cmd+Tab, which then replaces the built-in app switcher while JustTab runs. Default: Option+Tab.
+- Live window thumbnails (macOS 14+, Screen Recording permission) in a grid that shrinks to fit every listed window on screen. Click a thumbnail to switch.
+- Permission monitoring: JustTab notices a missing Accessibility or Screen Recording permission and asks for it.
+- `scripts/release.sh`: Developer ID signing with hardened runtime, DMG, notarization and stapling.
+
+### Changed
+
+- Faster first switch after launch, and thumbnails appear progressively with the selected window first.
+- Renamed to JustTab (bundle identifier `com.leonardchow.justtab`).
+
+### Fixed
+
+- Stale thumbnails after quick repeated switches.
+- Clicking a thumbnail did not switch.
+- With many windows the grid ran off screen.
+- Cmd+Q and Cmd+W reached the front app while the switcher was open.
 
 ## [1.1.1] - 2026-06-17
 
