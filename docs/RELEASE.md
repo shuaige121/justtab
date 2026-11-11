@@ -11,6 +11,7 @@ archives the app, has Xcode sign it with a cloud-managed Developer ID certificat
 for notarization through the account in Xcode > Settings > Accounts, waits for the ticket, checks
 Gatekeeper (`source=Notarized Developer ID`) and writes `~/work/justtab-build/dist/JustTab-<version>.zip`
 with its SHA-256. It publishes nothing. Then attach the ZIP to a GitHub Release (`gh release create`).
+After the release, update `version` and `sha256` in `Casks/justtab.rb` of [shuaige121/homebrew-tap](https://github.com/shuaige121/homebrew-tap) (local clone: `~/work/homebrew-tap`) and check it with `brew audit --cask --strict --online shuaige121/tap/justtab`.
 
 It produces a ZIP, not a DMG: the cloud-managed certificate has no local private key, so the DMG
 itself could not be signed. For a signed and notarized DMG use `scripts/release.sh` after the

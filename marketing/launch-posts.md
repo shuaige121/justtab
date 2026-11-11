@@ -52,7 +52,8 @@ The source uses exactly one private macOS function: _AXUIElementGetWindow, to ma
 Requires macOS 13+ and Accessibility permission. Live thumbnails need macOS 14+ and Screen Recording permission; otherwise, app icons are shown.
 
 Download (free; signed with Developer ID and notarized by Apple): https://github.com/shuaige121/justtab/releases/latest
-Unzip and move JustTab to Applications. Building from source with Xcode is also possible.
+Unzip and move JustTab to Applications. With Homebrew: brew install --cask shuaige121/tap/justtab
+Building from source with Xcode is also possible.
 
 Free forever and open source (MIT). No paywall, no Pro tier, no upsell; nothing in the app will ever be sold. The app contains no networking code: no telemetry, no account, no update checks.
 
@@ -90,7 +91,8 @@ Free forever, MIT-licensed and open source. No paywall, no Pro tier, no upsell; 
 Requires macOS 13+ and Accessibility permission. Live thumbnails need macOS 14+ and Screen Recording permission; otherwise, app icons are shown.
 
 Download (free; signed with Developer ID and notarized by Apple): https://github.com/shuaige121/justtab/releases/latest
-Unzip and move JustTab to Applications. Building from source with Xcode is also possible.
+Unzip and move JustTab to Applications. With Homebrew: brew install --cask shuaige121/tap/justtab
+Building from source with Xcode is also possible.
 
 Repository: https://github.com/shuaige121/justtab
 JustTab is a stripped-down fork of alttab-macos by Sergio Farfan (MIT), itself inspired by AltTab by lwouis.
@@ -132,7 +134,8 @@ Free forever, MIT-licensed and open source. No paywall, no Pro tier, no upsell. 
 Requires macOS 13+ and Accessibility permission. Live thumbnails need macOS 14+ and Screen Recording permission; without them, app icons are shown.
 
 Download (free; signed with Developer ID and notarized by Apple): https://github.com/shuaige121/justtab/releases/latest
-Unzip and move JustTab to Applications. Building from source with Xcode is also possible.
+Unzip and move JustTab to Applications. With Homebrew: brew install --cask shuaige121/tap/justtab
+Building from source with Xcode is also possible.
 
 Repository: https://github.com/shuaige121/justtab
 JustTab is a stripped-down fork of alttab-macos by Sergio Farfan (MIT), itself inspired by AltTab by lwouis.
@@ -214,7 +217,8 @@ JustTab 默认用 Option+Tab。PC 键盘接到 Mac 时，Alt 键等同于 Option
 需要 macOS 13 或更高版本，以及辅助功能权限。实时缩略图需要 macOS 14 或更高版本及屏幕录制权限，否则显示 App 图标。
 
 免费下载（已用 Developer ID 签名并经 Apple 公证）：https://github.com/shuaige121/justtab/releases/latest
-解压后把 JustTab 移到「应用程序」。也可以用 Xcode 从源码构建。
+解压后把 JustTab 移到「应用程序」。也可以用 Homebrew 安装：brew install --cask shuaige121/tap/justtab
+或用 Xcode 从源码构建。
 
 仓库：https://github.com/shuaige121/justtab
 JustTab 是 Sergio Farfan 的 alttab-macos（MIT）的精简 fork，后者受 lwouis 的 AltTab 启发。
@@ -244,7 +248,8 @@ JustTab 常驻菜单栏，没有 Dock 图标。主要设置只有快捷键，另
 需要 macOS 13 或更高版本及辅助功能权限。实时缩略图需要 macOS 14 或更高版本及屏幕录制权限，否则显示 App 图标。
 
 免费下载（已用 Developer ID 签名并经 Apple 公证）：https://github.com/shuaige121/justtab/releases/latest
-解压后把 JustTab 移到「应用程序」。也可以用 Xcode 从源码构建。
+解压后把 JustTab 移到「应用程序」。也可以用 Homebrew 安装：brew install --cask shuaige121/tap/justtab
+或用 Xcode 从源码构建。
 
 仓库：https://github.com/shuaige121/justtab
 JustTab 是 Sergio Farfan 的 alttab-macos（MIT）的精简 fork，后者受 lwouis 的 AltTab 启发。

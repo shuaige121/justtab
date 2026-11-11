@@ -23,6 +23,12 @@ Pure Swift + AppKit, with zero third-party dependencies. About 2,600 lines of Sw
 
 Download `JustTab-2.0.0.zip` from [GitHub Releases](https://github.com/shuaige121/justtab/releases/latest), unzip it and move JustTab to Applications. The app is signed with Developer ID and notarized by Apple. Requires macOS 13 or later.
 
+Or with [Homebrew](https://brew.sh):
+
+```bash
+brew install --cask shuaige121/tap/justtab
+```
+
 Or build from source with full Xcode:
 
 ```bash
@@ -111,6 +117,12 @@ JustTab 专注于切换窗口。主要设置只有快捷键，另有「登录时
 ### 安装
 
 从 [GitHub Releases](https://github.com/shuaige121/justtab/releases/latest) 下载 `JustTab-2.0.0.zip`，解压后把 JustTab 移到「应用程序」。App 已用 Developer ID 签名并经 Apple 公证。系统要求为 macOS 13 或更高版本。
+
+或用 [Homebrew](https://brew.sh) 安装：
+
+```bash
+brew install --cask shuaige121/tap/justtab
+```
 
 也可以用完整版 Xcode 从源码构建：
 
