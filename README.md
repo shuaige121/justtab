@@ -21,7 +21,9 @@ Pure Swift + AppKit, with zero third-party dependencies. About 2,600 lines of Sw
 
 ## Install
 
-Install today by building from source with full Xcode. Requires macOS 13 or later.
+Download `JustTab-1.2.0.zip` from [GitHub Releases](https://github.com/shuaige121/justtab/releases/latest), unzip it and move JustTab to Applications. The app is signed with Developer ID and notarized by Apple. Requires macOS 13 or later.
+
+Or build from source with full Xcode:
 
 ```bash
 git clone https://github.com/shuaige121/justtab.git
@@ -30,8 +32,6 @@ cd justtab
 ```
 
 This installs JustTab to `~/Applications`.
-
-Planned download: a Developer ID-signed DMG notarized by Apple, from GitHub Releases. It is not available yet. <!-- P3 -->
 
 ## Usage
 
@@ -58,9 +58,7 @@ Planned download: a Developer ID-signed DMG notarized by Apple, from GitHub Rele
 
 ### Why not on the Mac App Store?
 
-App Store apps must be sandboxed. A sandboxed app cannot use the Accessibility API to list or focus other apps' windows, as Apple Developer Technical Support explained on the Apple Developer Forums ([2024](https://developer.apple.com/forums/thread/756130), [2025](https://developer.apple.com/forums/thread/780626)). Window switchers of this kind are distributed directly. JustTab is not on the Mac App Store; install it from source today.
-
-A Developer ID-signed DMG notarized by Apple is planned for GitHub Releases. <!-- P3 -->
+App Store apps must be sandboxed. A sandboxed app cannot use the Accessibility API to list or focus other apps' windows, as Apple Developer Technical Support explained on the Apple Developer Forums ([2024](https://developer.apple.com/forums/thread/756130), [2025](https://developer.apple.com/forums/thread/780626)). Window switchers of this kind are distributed directly. JustTab is not on the Mac App Store. Download it from [GitHub Releases](https://github.com/shuaige121/justtab/releases/latest): it is signed with Developer ID and notarized by Apple.
 
 ### Can it replace Cmd-Tab?
 
@@ -112,7 +110,9 @@ JustTab 专注于切换窗口。主要设置只有快捷键，另有「登录时
 
 ### 安装
 
-目前需用完整版 Xcode 从源码构建，系统要求为 macOS 13 或更高版本。
+从 [GitHub Releases](https://github.com/shuaige121/justtab/releases/latest) 下载 `JustTab-1.2.0.zip`，解压后把 JustTab 移到「应用程序」。App 已用 Developer ID 签名并经 Apple 公证。系统要求为 macOS 13 或更高版本。
+
+也可以用完整版 Xcode 从源码构建：
 
 ```bash
 git clone https://github.com/shuaige121/justtab.git
@@ -121,8 +121,6 @@ cd justtab
 ```
 
 安装位置为 `~/Applications`。
-
-下载计划：在 GitHub Releases 提供经 Developer ID 签名和 Apple 公证的 DMG，目前尚未提供。 <!-- P3 -->
 
 ### 使用
 
@@ -149,9 +147,7 @@ cd justtab
 
 #### 为什么不在 Mac App Store 上架？
 
-App Store 要求应用启用 sandbox。启用后，应用无法通过 Accessibility API 列出或聚焦其他 App 的窗口。Apple Developer Technical Support 在 Apple Developer Forums 的答复中说明了这一限制（[2024](https://developer.apple.com/forums/thread/756130)、[2025](https://developer.apple.com/forums/thread/780626)），因此这类窗口切换器通过直接分发提供。JustTab 不在 Mac App Store 上架，目前可从源码安装。
-
-计划在 GitHub Releases 提供经 Developer ID 签名和 Apple 公证的 DMG。 <!-- P3 -->
+App Store 要求应用启用 sandbox。启用后，应用无法通过 Accessibility API 列出或聚焦其他 App 的窗口。Apple Developer Technical Support 在 Apple Developer Forums 的答复中说明了这一限制（[2024](https://developer.apple.com/forums/thread/756130)、[2025](https://developer.apple.com/forums/thread/780626)），因此这类窗口切换器通过直接分发提供。JustTab 不在 Mac App Store 上架，请从 [GitHub Releases](https://github.com/shuaige121/justtab/releases/latest) 下载：已用 Developer ID 签名并经 Apple 公证。
 
 #### 可以替换 Cmd-Tab 吗？
 

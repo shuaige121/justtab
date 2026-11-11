@@ -1,6 +1,6 @@
 # Launch post drafts
 
-Internal publishing instructions: copy only the fenced post text. Counts, headings, preconditions and gallery directions are editorial notes. Nothing has been posted. Every section requires the repository to be public first (F16). Installation in these drafts is from source with full Xcode (F13).
+Internal publishing instructions: copy only the fenced post text. Counts, headings, preconditions and gallery directions are editorial notes. Nothing has been posted. Every section requires the repository to be public first (F16). Installation in these drafts is the notarized download from GitHub Releases (v1.2.0, 2026-11-11), with building from source as the alternative.
 
 Counts are Unicode code points, including spaces and punctuation, excluding fence markers and the final newline. X posts also fit when their one URL is counted as 23 characters. Recheck platform rules at posting time. Run `python3 marketing/check-copy.py` to verify the printed counts.
 
@@ -10,9 +10,9 @@ Preconditions: the owner has made the repository public. Publish the README with
 
 <!-- count: GitHub description; max: 350 -->
 ```text
-Windows-style Alt-Tab for the Mac: JustTab switches individual windows, not just apps, in one thumbnail grid. Option+Tab by default, with a configurable shortcut. Free forever, open source (MIT), no networking code. Requires macOS 13+; live thumbnails need macOS 14+ and Screen Recording permission. Build from source with full Xcode.
+Windows-style Alt-Tab for the Mac: JustTab switches individual windows, not just apps, in one thumbnail grid. Option+Tab by default, with a configurable shortcut. Free forever, open source (MIT), no networking code. Requires macOS 13+; live thumbnails need macOS 14+ and Screen Recording permission. Signed, notarized download in Releases.
 ```
-(334/350)
+(339/350)
 
 **Topics**
 
@@ -51,11 +51,8 @@ The source uses exactly one private macOS function: _AXUIElementGetWindow, to ma
 
 Requires macOS 13+ and Accessibility permission. Live thumbnails need macOS 14+ and Screen Recording permission; otherwise, app icons are shown.
 
-Install today with full Xcode:
-git clone https://github.com/shuaige121/justtab.git
-cd justtab
-./build.sh install
-This installs to ~/Applications.
+Download (free; signed with Developer ID and notarized by Apple): https://github.com/shuaige121/justtab/releases/latest
+Unzip and move JustTab to Applications. Building from source with Xcode is also possible.
 
 Free forever and open source (MIT). No paywall, no Pro tier, no upsell; nothing in the app will ever be sold. The app contains no networking code: no telemetry, no account, no update checks.
 
@@ -92,11 +89,8 @@ Free forever, MIT-licensed and open source. No paywall, no Pro tier, no upsell; 
 
 Requires macOS 13+ and Accessibility permission. Live thumbnails need macOS 14+ and Screen Recording permission; otherwise, app icons are shown.
 
-Install today by building with full Xcode:
-git clone https://github.com/shuaige121/justtab.git
-cd justtab
-./build.sh install
-This installs to ~/Applications.
+Download (free; signed with Developer ID and notarized by Apple): https://github.com/shuaige121/justtab/releases/latest
+Unzip and move JustTab to Applications. Building from source with Xcode is also possible.
 
 Repository: https://github.com/shuaige121/justtab
 JustTab is a stripped-down fork of alttab-macos by Sergio Farfan (MIT), itself inspired by AltTab by lwouis.
@@ -120,9 +114,9 @@ Windows-style Alt-Tab for Mac: switch windows, not apps
 
 <!-- count: Product Hunt description; max: 260 -->
 ```text
-A free, open-source macOS window switcher. Hold Option+Tab, choose a window, release to switch. Requires macOS 13+ and Accessibility permission. Live thumbnails need macOS 14+ and Screen Recording permission. Build from source with full Xcode.
+A free, open-source macOS window switcher. Hold Option+Tab, choose a window, release to switch. Requires macOS 13+ and Accessibility permission. Live thumbnails need macOS 14+ and Screen Recording permission. Signed and notarized download.
 ```
-(243/260)
+(239/260)
 
 **First comment**
 
@@ -137,11 +131,8 @@ Free forever, MIT-licensed and open source. No paywall, no Pro tier, no upsell. 
 
 Requires macOS 13+ and Accessibility permission. Live thumbnails need macOS 14+ and Screen Recording permission; without them, app icons are shown.
 
-Install today with full Xcode:
-git clone https://github.com/shuaige121/justtab.git
-cd justtab
-./build.sh install
-This installs to ~/Applications.
+Download (free; signed with Developer ID and notarized by Apple): https://github.com/shuaige121/justtab/releases/latest
+Unzip and move JustTab to Applications. Building from source with Xcode is also possible.
 
 Repository: https://github.com/shuaige121/justtab
 JustTab is a stripped-down fork of alttab-macos by Sergio Farfan (MIT), itself inspired by AltTab by lwouis.
@@ -181,9 +172,9 @@ Record any key plus Control, Option, Shift or Cmd (one or more) via Change Short
 
 <!-- count: X post 4; max: 280 -->
 ```text
-Requires macOS 13+ and Accessibility permission. Live thumbnails need macOS 14+ and Screen Recording permission; otherwise, app icons are shown. Install today: build from source with full Xcode. Instructions: https://github.com/shuaige121/justtab#install
+Requires macOS 13+ and Accessibility permission. Live thumbnails need macOS 14+ and Screen Recording permission; otherwise, app icons are shown. Free download, signed with Developer ID and notarized by Apple: https://github.com/shuaige121/justtab/releases/latest
 ```
-(254/280)
+(262/280)
 
 <!-- count: X post 5; max: 280 -->
 ```text
@@ -222,11 +213,8 @@ JustTab 默认用 Option+Tab。PC 键盘接到 Mac 时，Alt 键等同于 Option
 
 需要 macOS 13 或更高版本，以及辅助功能权限。实时缩略图需要 macOS 14 或更高版本及屏幕录制权限，否则显示 App 图标。
 
-目前需要完整版 Xcode，从源码构建安装：
-git clone https://github.com/shuaige121/justtab.git
-cd justtab
-./build.sh install
-安装位置为 ~/Applications。
+免费下载（已用 Developer ID 签名并经 Apple 公证）：https://github.com/shuaige121/justtab/releases/latest
+解压后把 JustTab 移到「应用程序」。也可以用 Xcode 从源码构建。
 
 仓库：https://github.com/shuaige121/justtab
 JustTab 是 Sergio Farfan 的 alttab-macos（MIT）的精简 fork，后者受 lwouis 的 AltTab 启发。
@@ -255,11 +243,8 @@ JustTab 常驻菜单栏，没有 Dock 图标。主要设置只有快捷键，另
 
 需要 macOS 13 或更高版本及辅助功能权限。实时缩略图需要 macOS 14 或更高版本及屏幕录制权限，否则显示 App 图标。
 
-目前需要完整版 Xcode，从源码构建安装：
-git clone https://github.com/shuaige121/justtab.git
-cd justtab
-./build.sh install
-安装到 ~/Applications。
+免费下载（已用 Developer ID 签名并经 Apple 公证）：https://github.com/shuaige121/justtab/releases/latest
+解压后把 JustTab 移到「应用程序」。也可以用 Xcode 从源码构建。
 
 仓库：https://github.com/shuaige121/justtab
 JustTab 是 Sergio Farfan 的 alttab-macos（MIT）的精简 fork，后者受 lwouis 的 AltTab 启发。
