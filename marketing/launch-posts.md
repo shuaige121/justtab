@@ -10,9 +10,9 @@ Preconditions: the owner has made the repository public. Publish the README with
 
 <!-- count: GitHub description; max: 350 -->
 ```text
-JustTab switches individual windows on macOS in one thumbnail grid. Option+Tab by default, with a configurable shortcut. Free forever, open source (MIT), no networking code. Requires macOS 13+; live thumbnails need macOS 14+ and Screen Recording permission. Build from source with full Xcode.
+Windows-style Alt-Tab for the Mac: JustTab switches individual windows, not just apps, in one thumbnail grid. Option+Tab by default, with a configurable shortcut. Free forever, open source (MIT), no networking code. Requires macOS 13+; live thumbnails need macOS 14+ and Screen Recording permission. Build from source with full Xcode.
 ```
-(292/350)
+(334/350)
 
 **Topics**
 
@@ -27,9 +27,9 @@ Preconditions for optional lines: confirm P1, P2, P4 and P5 on a real Mac, or de
 
 <!-- count: Show HN title; max: 80 -->
 ```text
-Show HN: JustTab — a free, open-source window switcher for macOS
+Show HN: JustTab – Windows-style Alt-Tab for the Mac, free and open source
 ```
-(64/80)
+(74/80)
 
 **First comment**
 
@@ -71,7 +71,7 @@ Preconditions for optional lines: confirm P1 and P2 on a real Mac, or delete the
 **Title**
 
 ```text
-JustTab: individual window switching on macOS, free forever and open source
+JustTab: Windows-style Alt-Tab for the Mac, free forever and open source
 ```
 
 **Post**
@@ -114,9 +114,9 @@ JustTab
 
 <!-- count: Product Hunt tagline; max: 60 -->
 ```text
-Switch individual windows on macOS. Free forever.
+Windows-style Alt-Tab for Mac: switch windows, not apps
 ```
-(49/60)
+(55/60)
 
 <!-- count: Product Hunt description; max: 260 -->
 ```text
@@ -163,9 +163,9 @@ Preconditions: the repository is public. Publish all five posts in order so the 
 
 <!-- count: X post 1; max: 280 -->
 ```text
-JustTab switches individual windows on macOS in one grid. Free forever and open source (MIT). No paywall, no Pro tier, no upsell. The app contains no networking code: no telemetry, no account, no update checks.
+JustTab is Windows-style Alt-Tab for the Mac: it switches individual windows, not just apps, in one grid. Free forever and open source (MIT). No paywall, no Pro tier, no upsell. The app contains no networking code: no telemetry, no account, no update checks.
 ```
-(210/280)
+(258/280)
 
 <!-- count: X post 2; max: 280 -->
 ```text
@@ -199,7 +199,7 @@ JustTab is a stripped-down fork of alttab-macos by Sergio Farfan (MIT), itself i
 **标题**
 
 ```text
-JustTab：在 Mac 上按窗口切换，永久免费、开源
+JustTab：像 Windows 的 Alt+Tab 一样在 Mac 上按窗口切换，永久免费、开源
 ```
 
 **正文**
@@ -238,9 +238,9 @@ JustTab 是 Sergio Farfan 的 alttab-macos（MIT）的精简 fork，后者受 lw
 
 <!-- count: Xiaohongshu title; max: 20 -->
 ```text
-Mac 按窗口切换
+Mac 上像 Windows 一样切窗口
 ```
-(9/20)
+(20/20)
 
 **正文**
 

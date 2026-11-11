@@ -4,11 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<meta name="description" content="JustTab is a free, open-source window switcher for macOS. Switch individual windows in one grid. Build from source with full Xcode.">
-<title>JustTab — Switch individual windows on macOS</title>
+<meta name="description" content="JustTab is a free, open-source window switcher for macOS that works like Alt-Tab on Windows: switch individual windows, not just apps, in one grid.">
+<title>JustTab — Windows-style Alt-Tab for the Mac</title>
 <style>
 :root { color-scheme: light dark; --bg: #f7f7f3; --paper: #fff; --ink: #202722; --muted: #545e57; --line: #cbd1ca; --accent: #28513c; --soft: #e6eae4; --block: #ced5cd; }
 * { box-sizing: border-box; }
+.nb { white-space: nowrap; }
 body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
 a { color: var(--accent); text-underline-offset: .2em; overflow-wrap: anywhere; }
 a:focus-visible, button:focus-visible { outline: 3px solid var(--accent); outline-offset: 5px; }
@@ -70,12 +71,11 @@ kbd { font: inherit; font-size: .9em; white-space: nowrap; border: 1px solid var
 <div class="hero">
 <div>
 <p class="eyebrow">A window switcher for macOS</p>
-<h1>Switch individual windows.</h1>
-<p class="lead">Windows from all apps, in one thumbnail grid. Hold the shortcut, choose a window, release to switch.</p>
+<h1>Windows-style <span class="nb">Alt-Tab</span> for the Mac.</h1>
+<p class="lead">Switch windows, not just apps. Windows from all apps, in one thumbnail grid. Hold the shortcut, choose a window, release to switch.</p>
 <p>The default is <kbd>Option+Tab</kbd>. On a PC keyboard connected to a Mac, Alt acts as Option: physically, <kbd>Alt+Tab</kbd>.</p>
 <div class="actions">
 <a class="button" href="https://github.com/shuaige121/justtab">View on GitHub</a>
-<button class="button" type="button" disabled>Download (planned)</button> <!-- P3 -->
 </div>
 <p class="note">Install today: <a href="https://github.com/shuaige121/justtab#install">build from source with full Xcode</a>. Installs to ~/Applications.</p>
 <p class="note">A Developer ID-signed DMG notarized by Apple is planned for GitHub Releases; it is not available yet.</p> <!-- P3 -->
@@ -115,11 +115,15 @@ kbd { font: inherit; font-size: .9em; white-space: nowrap; border: 1px solid var
 </div>
 <div class="section faq" aria-labelledby="faq">
 <h2 id="faq">Questions, answered.</h2>
-<div class="answer"><h3>Why not on the Mac App Store?</h3><p>App Store apps must be sandboxed. A sandboxed app cannot use the Accessibility API to list or focus other apps' windows, as explained by Apple Developer Technical Support on Apple Developer Forums in 2024 and 2025. Window switchers of this kind are distributed directly. JustTab is not on the Mac App Store; install it from source today.</p></div>
+<div class="answer"><h3>Why not on the Mac App Store?</h3><p>App Store apps must be sandboxed. A sandboxed app cannot use the Accessibility API to list or focus other apps' windows, as Apple Developer Technical Support explained on the Apple Developer Forums (<a href="https://developer.apple.com/forums/thread/756130">2024</a>, <a href="https://developer.apple.com/forums/thread/780626">2025</a>). Window switchers of this kind are distributed directly. JustTab is not on the Mac App Store; install it from source today.</p>
 <p>A Developer ID-signed DMG notarized by Apple is planned for GitHub Releases.</p> <!-- P3 -->
-<div class="answer"><h3>Can it replace Cmd-Tab?</h3><p>Yes. Open Change Shortcut… from the menu bar and record Cmd+Tab. It replaces the built-in app switcher while JustTab runs. Any key plus one or more of Control, Option, Shift and Cmd can be recorded. Esc cancels recording.</p><p>On macOS, Cmd-Tab switches apps; Cmd-` cycles windows of the current app only.</p></div>
+</div>
+<div class="answer"><h3>Can it replace Cmd-Tab?</h3><p>Yes. Open Change Shortcut… from the menu bar and record Cmd+Tab. It replaces the built-in app switcher while JustTab runs. Any key plus one or more of Control, Option, Shift and Cmd can be recorded. Esc cancels recording.</p><p>On macOS, <span class="nb">Cmd-Tab</span> switches apps; <span class="nb">Cmd-`</span> cycles windows of the current app only.</p></div>
 <div class="answer"><h3>Does it phone home?</h3><p>No. The app contains no networking code: no telemetry, no account, no update checks.</p></div>
-<div class="answer"><h3>What about windows on other desktops or hidden apps?</h3><p>Windows of apps hidden with Cmd-H are listed; choosing one brings the app back.</p><p>Windows on other desktops (Spaces) are listed; choosing one switches to that desktop.</p></div> <!-- P1 P2 -->
+<div class="answer"><h3>Which windows are listed?</h3><p>Windows from all apps, including minimized windows, shown dimmed.</p>
+<p>Windows of apps hidden with Cmd-H are listed; choosing one brings the app back.</p> <!-- P1 -->
+<p>Windows on other desktops (Spaces) are listed; choosing one switches to that desktop.</p> <!-- P2 -->
+</div>
 <div class="answer"><h3>Does it use private macOS functions?</h3><p>The source uses exactly one private macOS function, <code>_AXUIElementGetWindow</code>, to match an accessibility window to its window ID.</p></div>
 </div>
 </div>

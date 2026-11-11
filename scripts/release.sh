@@ -11,8 +11,9 @@ Builds JustTab (Release), signs it, wraps it in a DMG, and notarizes it.
 
   (no flag)       Full release: Developer ID signature, notarization by Apple
                   (uploads the DMG to Apple), stapling, Gatekeeper check.
-  --no-notarize   Pipeline test only. Signs with JUSTTAB_SIGN_IDENTITY or an
-                  "Apple Development" identity, skips notarization, stapling
+  --no-notarize   Pipeline test only. Signs with JUSTTAB_SIGN_IDENTITY,
+                  SIGN_IDENTITY, a Developer ID Application identity or the
+                  first "Apple Development" identity, skips notarization, stapling
                   and spctl, never contacts Apple. The DMG is a local test
                   build that Gatekeeper will block on other Macs.
 
@@ -20,8 +21,7 @@ Environment:
   SIGN_IDENTITY   Signing identity (name or SHA-1). Default: the first
                   "Developer ID Application" identity in the keychain.
   JUSTTAB_SIGN_IDENTITY
-                  Signing identity for --no-notarize. Default: the first
-                  valid "Apple Development:" identity in the keychain.
+                  Signing identity for --no-notarize (overrides SIGN_IDENTITY).
   NOTARY_PROFILE  notarytool keychain profile. Default: justtab-notary
   BUILD_DIR       Derived data folder. Default: $HOME/work/justtab-build/release
   DIST_DIR        DMG output folder.  Default: $HOME/work/justtab-build/dist
@@ -58,7 +58,8 @@ IDENTITIES="$(security find-identity -v -p codesigning || true)"
 find_hash() { printf '%s\n' "$IDENTITIES" | grep "\"$1" | head -n 1 | awk '{print $2}' || true; }
 
 if [ "$NOTARIZE" = 0 ]; then
-  IDENTITY="${JUSTTAB_SIGN_IDENTITY:-}"
+  IDENTITY="${JUSTTAB_SIGN_IDENTITY:-${SIGN_IDENTITY:-}}"
+  [ -n "$IDENTITY" ] || IDENTITY="$(find_hash 'Developer ID Application')"
   [ -n "$IDENTITY" ] || IDENTITY="$(find_hash 'Apple Development:')"
   [ -n "$IDENTITY" ] || die "no valid 'Apple Development:' identity in the keychain.
 Create an Apple Development certificate, or set JUSTTAB_SIGN_IDENTITY for --no-notarize."

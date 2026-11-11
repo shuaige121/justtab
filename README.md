@@ -1,6 +1,6 @@
 # JustTab
 
-Switch between individual windows on macOS in one thumbnail grid.
+Windows-style Alt-Tab for the Mac: switch between individual windows, not just apps, in one thumbnail grid.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 ![macOS 13+](https://img.shields.io/badge/macOS-13%2B-blue)
@@ -58,7 +58,7 @@ Planned download: a Developer ID-signed DMG notarized by Apple, from GitHub Rele
 
 ### Why not on the Mac App Store?
 
-App Store apps must be sandboxed. A sandboxed app cannot use the Accessibility API to list or focus other apps' windows, as explained by Apple Developer Technical Support on Apple Developer Forums in 2024 and 2025. Window switchers of this kind are distributed directly. JustTab is not on the Mac App Store; install it from source today.
+App Store apps must be sandboxed. A sandboxed app cannot use the Accessibility API to list or focus other apps' windows, as Apple Developer Technical Support explained on the Apple Developer Forums ([2024](https://developer.apple.com/forums/thread/756130), [2025](https://developer.apple.com/forums/thread/780626)). Window switchers of this kind are distributed directly. JustTab is not on the Mac App Store; install it from source today.
 
 A Developer ID-signed DMG notarized by Apple is planned for GitHub Releases. <!-- P3 -->
 
@@ -70,7 +70,10 @@ Yes. Open **Change Shortcut…** from the menu bar and record **Cmd+Tab**. It re
 
 No. The app contains no networking code: no telemetry, no account, no update checks.
 
-### What about windows on other desktops or hidden apps? <!-- P1 P2 -->
+### Which windows are listed?
+
+Windows from all apps, including minimized windows, shown dimmed.
+
 
 Windows of apps hidden with Cmd-H are listed; choosing one brings the app back. <!-- P1 -->
 Windows on other desktops (Spaces) are listed; choosing one switches to that desktop. <!-- P2 -->
@@ -93,7 +96,7 @@ JustTab is a stripped-down fork of alttab-macos by Sergio Farfan (MIT), itself i
 
 ### JustTab
 
-在一个缩略图网格里，切换 macOS 各个 App 的窗口。
+像 Windows 的 Alt+Tab 一样，在 Mac 上按窗口切换，而不只是切换 App。
 
 ### 功能
 
@@ -146,7 +149,7 @@ cd justtab
 
 #### 为什么不在 Mac App Store 上架？
 
-App Store 要求应用启用 sandbox。启用后，应用无法通过 Accessibility API 列出或聚焦其他 App 的窗口。Apple Developer Technical Support 在 2024 和 2025 年的 Apple Developer Forums 答复中说明了这一限制，因此这类窗口切换器通过直接分发提供。JustTab 不在 Mac App Store 上架，目前可从源码安装。
+App Store 要求应用启用 sandbox。启用后，应用无法通过 Accessibility API 列出或聚焦其他 App 的窗口。Apple Developer Technical Support 在 Apple Developer Forums 的答复中说明了这一限制（[2024](https://developer.apple.com/forums/thread/756130)、[2025](https://developer.apple.com/forums/thread/780626)），因此这类窗口切换器通过直接分发提供。JustTab 不在 Mac App Store 上架，目前可从源码安装。
 
 计划在 GitHub Releases 提供经 Developer ID 签名和 Apple 公证的 DMG。 <!-- P3 -->
 
@@ -158,7 +161,10 @@ App Store 要求应用启用 sandbox。启用后，应用无法通过 Accessibil
 
 不会。应用不含联网代码，无遥测、无账号，也不检查更新。
 
-#### 其他桌面或隐藏 App 的窗口呢？ <!-- P1 P2 -->
+#### 会列出哪些窗口？
+
+所有 App 的窗口，包括已最小化的窗口（显示为暗色）。
+
 
 用 Cmd-H 隐藏的 App，其窗口也会列出；选中窗口后会重新显示该 App。 <!-- P1 -->
 其他桌面（Spaces）的窗口也会列出；选中后会切换到对应桌面。 <!-- P2 -->

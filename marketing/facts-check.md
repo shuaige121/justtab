@@ -67,3 +67,10 @@ F19's planned distribution sentence depends on P3 and is split out of every othe
 - Package-manager availability, automatic updating, release versions/dates, release schedules, maker name or contact.
 - User counts, stars, testimonials, ratings, awards, popularity claims and comparisons with other products.
 - Real screenshots, recordings and gallery assets. These are not fabricated; `capture-plan.md` specifies the work still needed.
+
+## Positioning phrase (added in review, 2026-11-11)
+
+| Phrase | Basis | Locations |
+| --- | --- | --- |
+| "Windows-style Alt-Tab for the Mac" / "switch windows, not just apps" / 「像 Windows 的 Alt+Tab 一样」 | Descriptive: F2 (individual windows), F3 (hold, Tab, release), F4 (Alt acts as Option on a PC keyboard), F15 (Cmd-Tab switches apps). Names the habit, not a product. | R pitch (both languages); S title, description, h1, lead; L G, H title, M title, P tagline, X1, V title, C title |
+| Apple Developer Forums links for F19 | developer.apple.com/forums/thread/756130 (DTS, May 2024: a sandboxed app cannot call `AXUIElementCreateApplication` on another app) and /thread/780626 (DTS, April 2025: a sandboxed app cannot use the Accessibility privilege). Checked by the main session on 2026-11-11. | R FAQ (both languages); S FAQ |

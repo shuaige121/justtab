@@ -12,6 +12,14 @@
 - In `--no-notarize` mode, the release script uses `JUSTTAB_SIGN_IDENTITY` if nonempty, otherwise the first valid Apple Development identity returned by `security find-identity -v -p codesigning`. It fails clearly when neither is available. The full-release `SIGN_IDENTITY` behavior is preserved.
 - The release script's help describes the new variable. `docs/RELEASE.md` and `CHANGELOG.md` remain untouched as requested; the former's environment list does not yet document the new test-mode variable.
 
+## Review changes (main session, 2026-11-11)
+
+- Restored the agreed positioning phrase "Windows-style Alt-Tab for the Mac" in the README pitch, landing-page title and headline, and the GitHub, Show HN, r/macapps, Product Hunt, X, V2EX and Xiaohongshu titles. Counts recomputed with `check-copy.py`.
+- "Which windows are listed?" replaces the combined P1/P2 FAQ, so P1 and P2 can be removed independently.
+- Linked the two Apple Developer Forums answers behind F19.
+- Landing page: removed the disabled Download button, moved the P3 line inside its FAQ answer, kept "Alt-Tab" and "Cmd-`" from breaking across lines. Rendered at 375 px and 1280 px in light and dark mode with no horizontal scrolling.
+- `release.sh --no-notarize` honours SIGN_IDENTITY again and prefers a Developer ID Application identity before the first Apple Development identity. Pipeline test ran to a signed, hardened-runtime DMG.
+
 ## Open questions for the owner
 
 - When will the repository be made public so the prepared posts can be published?
