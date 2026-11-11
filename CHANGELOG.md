@@ -5,9 +5,9 @@ All notable changes to JustTab will be documented in this file. Versions up to 1
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.2.0] - 2026-11-11
+## [2.0.0] - 2026-11-11
 
-First JustTab release, forked from alttab-macos 1.1.1.
+First JustTab release, forked from alttab-macos 1.1.1. The version starts at 2.0.0 so it cannot be confused with alttab-macos releases 1.2.0 to 1.3.3.
 
 ### Added
 

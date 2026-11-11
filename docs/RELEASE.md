@@ -4,6 +4,18 @@
 sends the DMG to Apple for notarization, and staples the result. It publishes nothing. The DMG
 ends up in `~/work/justtab-build/dist/JustTab-<version>.dmg`.
 
+## Quick path: the Apple account signed in to Xcode (used for 2.0.0)
+
+`scripts/release-xcode.sh` needs no certificate in the keychain and no notarytool profile. It
+archives the app, has Xcode sign it with a cloud-managed Developer ID certificate, uploads it to Apple
+for notarization through the account in Xcode > Settings > Accounts, waits for the ticket, checks
+Gatekeeper (`source=Notarized Developer ID`) and writes `~/work/justtab-build/dist/JustTab-<version>.zip`
+with its SHA-256. It publishes nothing. Then attach the ZIP to a GitHub Release (`gh release create`).
+
+It produces a ZIP, not a DMG: the cloud-managed certificate has no local private key, so the DMG
+itself could not be signed. For a signed and notarized DMG use `scripts/release.sh` after the
+one-time setup below.
+
 ## One-time setup
 
 ### 1. Create a Developer ID Application certificate

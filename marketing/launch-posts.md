@@ -1,6 +1,6 @@
 # Launch post drafts
 
-Internal publishing instructions: copy only the fenced post text. Counts, headings, preconditions and gallery directions are editorial notes. Nothing has been posted. Every section requires the repository to be public first (F16). Installation in these drafts is the notarized download from GitHub Releases (v1.2.0, 2026-11-11), with building from source as the alternative.
+Internal publishing instructions: copy only the fenced post text. Counts, headings, preconditions and gallery directions are editorial notes. Nothing has been posted. Every section requires the repository to be public first (F16). Installation in these drafts is the notarized download from GitHub Releases (v2.0.0, 2026-11-11), with building from source as the alternative.
 
 Counts are Unicode code points, including spaces and punctuation, excluding fence markers and the final newline. X posts also fit when their one URL is counted as 23 characters. Recheck platform rules at posting time. Run `python3 marketing/check-copy.py` to verify the printed counts.
 
